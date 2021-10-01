@@ -214,7 +214,7 @@ impl x509_crt {
     }
 
     pub fn parse(&mut self, buf: &[u8]) -> &mut Self {
-        let result = self.0.parse(buf);
+        let result = self.0.parse(&crate::null_terminate_bytes!(buf));
         if result > 0 {
             println!("{} certificates couldn't be parsed", result);
         } else if result < 0 {
@@ -322,12 +322,9 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
         99, 204, 130, 58, 52, 185, 100, 173, 200, 53, 181, 142, 46, 225, 231, 227, 0, 136, 173, 230, 137, 111, 148, 177, 58, 199, 48, 100, 62, 150, 96, 181, 169, 52, 83, 243, 201, 216, 160, 154, 181, 122, 1, 19, 164, 6, 114, 120, 132, 118, 58, 42, 208, 75, 79, 171, 79, 111, 184, 188, 179, 46, 250, 71
     ];
 
-    let pem = crate::null_terminate_str!(pem);
-    // println!("pem: [len={}] {:?}", pem.len(), pem);
-
     // c.f. `x509parse_crt()` of 'mbedtls/tests/suites/test_suite_x509parse.function'
     assert!(x509_crt::new()
-        .parse(&pem)
+        .parse(pem.as_bytes())
         .info() // debug
         .pk_mut()
         .verify(md_ty, hash, sig));
