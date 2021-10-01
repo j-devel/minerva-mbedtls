@@ -1,0 +1,9 @@
+[package]
+name = "voucher-v3-x86_64-std"
+version = "0.1.0"
+edition = "2018"
+authors = ["ANIMA Minerva toolkit"]
+
+[dependencies]
+minerva-mbedtls = { path = "../..", features = ["std"] }
+
