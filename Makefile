@@ -20,4 +20,4 @@ test:
 	cargo test --no-default-features --features "std"
 	$(MBEDCRYPTO_ENVS) cargo test
 	$(MBEDCRYPTO_ENVS) cargo test --features "std"
-	make -C examples/voucher-v3-x86_64-std test
+	make -C examples/voucher-x86_64-std test
