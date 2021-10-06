@@ -1,7 +1,8 @@
 use std::path::Path;
 use std::process::Command;
+use std::env;
 
-fn main() {
+fn main() -> std::io::Result<()> {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
 
@@ -13,7 +14,7 @@ fn main() {
     // TODO cross build -- https://developer.trustedfirmware.org/w/mbed-tls/testing/ci/
     //   e.g. `make -j CC=gcc CFLAGS="-m32 -O2 -DMBEDTLS_ARIA_C=ON" LDFLAGS="-m32" lib`
 
-    let mbedtls = format!("mbedtls-{}-{}", ver, arch);
+    let mbedtls = format!("{}/mbedtls-{}-{}", env::var("OUT_DIR").unwrap(), ver, arch);
     let branch = if is_v3 { "v3.0.0" } else { "v2.16.11" };
     let cflags = if is_v3 {
         "CFLAGS='-O2 -DMBEDTLS_USE_PSA_CRYPTO=ON'"
@@ -29,21 +30,13 @@ fn main() {
 
     if !Path::new(&mbedtls).exists() {
         Command::new("git")
-            .args(&["clone", "-b", branch, "https://github.com/ARMmbed/mbedtls", &mbedtls])
-            .status()
-            .unwrap();
+            .args(&["clone", "-b", branch, "https://github.com/ARMmbed/mbedtls", &mbedtls]).status()?;
         Command::new("make")
-            .args(&["-C", &mbedtls, "-j", cflags, "lib"])
-            .status()
-            .unwrap();
+            .args(&["-C", &mbedtls, "-j", cflags, "lib"]).status()?;
         Command::new("mkdir")
-            .args(&[&local])
-            .status()
-            .unwrap();
+            .args(&[&local]).status()?;
         Command::new("make")
-            .args(&["-C", &mbedtls, "-j", "DESTDIR=./__local", "install"])
-            .status()
-            .unwrap();
+            .args(&["-C", &mbedtls, "-j", "DESTDIR=./__local", "install"]).status()?;
     }
 
     //
@@ -64,4 +57,6 @@ fn main() {
     cfg.include(include_dir)
         .file("src/glue.c")
         .compile("libglue-mbedtls.a");
+
+    Ok(())
 }
