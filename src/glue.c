@@ -29,13 +29,13 @@ extern size_t glue_sizeof_mbedtls_x509_time() { return sizeof(mbedtls_x509_time)
 extern void glue_debug_sizeof(void) {
     printf("glue_debug_sizeof(): ^^\n");
 
-    printf("sizeof(int): %lu\n", glue_sizeof_int());
+    printf("sizeof(int): %zu\n", glue_sizeof_int());
 
-    printf("sizeof(mbedtls_pk_context): %lu\n", glue_sizeof_mbedtls_pk_context());
-    printf("sizeof(mbedtls_ecp_keypair): %lu\n", glue_sizeof_mbedtls_ecp_keypair());
-    printf("  sizeof(mbedtls_ecp_group): %lu\n", glue_sizeof_mbedtls_ecp_group());
-    printf("  sizeof(mbedtls_mpi): %lu\n", glue_sizeof_mbedtls_mpi());
-    printf("  sizeof(mbedtls_ecp_point): %lu\n", glue_sizeof_mbedtls_ecp_point());
+    printf("sizeof(mbedtls_pk_context): %zu\n", glue_sizeof_mbedtls_pk_context());
+    printf("sizeof(mbedtls_ecp_keypair): %zu\n", glue_sizeof_mbedtls_ecp_keypair());
+    printf("  sizeof(mbedtls_ecp_group): %zu\n", glue_sizeof_mbedtls_ecp_group());
+    printf("  sizeof(mbedtls_mpi): %zu\n", glue_sizeof_mbedtls_mpi());
+    printf("  sizeof(mbedtls_ecp_point): %zu\n", glue_sizeof_mbedtls_ecp_point());
 
     printf("sizeof(mbedtls_x509_crt): %zu\n", glue_sizeof_mbedtls_x509_crt());
     printf("  sizeof(mbedtls_x509_buf): %zu\n", glue_sizeof_mbedtls_x509_buf());

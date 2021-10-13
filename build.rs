@@ -9,34 +9,29 @@ fn main() -> std::io::Result<()> {
     let is_v3 = cfg!(feature = "v3");
     let ver = if is_v3 { "v3" } else { "lts" };
 
-    let arch = "x86_64"; // TODO auto detect arch
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let target = env::var("TARGET").unwrap();
 
-    // TODO cross build -- https://developer.trustedfirmware.org/w/mbed-tls/testing/ci/
-    //   e.g. `make -j CC=gcc CFLAGS="-m32 -O2 -DMBEDTLS_ARIA_C=ON" LDFLAGS="-m32" lib`
-
-    let mbedtls = format!("{}/mbedtls-{}-{}", env::var("OUT_DIR").unwrap(), ver, arch);
     let branch = if is_v3 { "v3.0.0" } else { "v2.16.11" };
-    let cflags = if is_v3 {
-        "CFLAGS='-O2 -DMBEDTLS_USE_PSA_CRYPTO=ON'"
-    } else {
-        "CFLAGS='-O2 -DMBEDTLS_ARIA_C=ON'"
-    };
+    let mbedtls = format!("{}/mbedtls-{}-{}", out_dir, ver, target);
+    let out_mk_target = format!("{}-{}", ver, match target.as_str() {
+        "xtensa-esp32-none-elf" => "xtensa",
+        "i686-unknown-linux-gnu" => "x86",
+        _ => "x86_64",
+    });
 
-    let local = format!("{}/__local", mbedtls);
-    let lib_dir = format!("{}/lib", local);
-    let include_dir = format!("{}/include", local);
+    let lib_dir = format!("{}/library", mbedtls);
+    let include_dir = format!("{}/include", mbedtls);
 
     //
 
     if !Path::new(&mbedtls).exists() {
         Command::new("git")
             .args(&["clone", "-b", branch, "https://github.com/ARMmbed/mbedtls", &mbedtls]).status()?;
+        Command::new("cp")
+            .args(&["out.mk", &out_dir]).status()?;
         Command::new("make")
-            .args(&["-C", &mbedtls, "-j", cflags, "lib"]).status()?;
-        Command::new("mkdir")
-            .args(&[&local]).status()?;
-        Command::new("make")
-            .args(&["-C", &mbedtls, "-j", "DESTDIR=./__local", "install"]).status()?;
+            .args(&["-C", &mbedtls, "-f", "../out.mk", &out_mk_target]).status()?;
     }
 
     //

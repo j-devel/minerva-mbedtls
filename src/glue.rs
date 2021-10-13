@@ -2,32 +2,40 @@
 pub const SIZE_STRUCT_OPAQUE: usize = 0;
 pub type OpaqueStruct = [u8; SIZE_STRUCT_OPAQUE];
 
-#[cfg(feature = "v3")]
+#[cfg(all(feature = "v3", target_arch = "x86_64"))]
 pub mod size_struct {
-    //==== x86_64
     pub const MBEDTLS_ECP_GROUP: usize = 248;
     pub const MBEDTLS_MPI: usize = 24;
     pub const MBEDTLS_X509_CRT: usize = 616;
-    //==== x86 TODO
-    // pub const MBEDTLS_ECP_GROUP: usize = ;
-    // pub const MBEDTLS_MPI: usize = ;
-    // pub const MBEDTLS_X509_CRT: usize = ;
-    //==== xtensa  TODO
+}
+#[cfg(all(feature = "v3", target_arch = "x86"))]
+pub mod size_struct {
     // pub const MBEDTLS_ECP_GROUP: usize = ;
     // pub const MBEDTLS_MPI: usize = ;
     // pub const MBEDTLS_X509_CRT: usize = ;
 }
-#[cfg(not(feature = "v3"))]
+#[cfg(all(feature = "v3", target_arch = "xtensa"))]
 pub mod size_struct {
-    //==== x86_64
-    pub const MBEDTLS_ECP_GROUP: usize = 248;
-    pub const MBEDTLS_MPI: usize = 24;
-    pub const MBEDTLS_X509_CRT: usize = 552;
-    //==== x86 TODO
     // pub const MBEDTLS_ECP_GROUP: usize = ;
     // pub const MBEDTLS_MPI: usize = ;
     // pub const MBEDTLS_X509_CRT: usize = ;
-    //==== xtensa  TODO
+}
+
+
+#[cfg(all(not(feature = "v3"), target_arch = "x86_64"))]
+pub mod size_struct {
+    pub const MBEDTLS_ECP_GROUP: usize = 248;
+    pub const MBEDTLS_MPI: usize = 24;
+    pub const MBEDTLS_X509_CRT: usize = 552;
+}
+#[cfg(all(not(feature = "v3"), target_arch = "x86"))]
+pub mod size_struct {
+    pub const MBEDTLS_ECP_GROUP: usize = 124;
+    pub const MBEDTLS_MPI: usize = 12;
+    pub const MBEDTLS_X509_CRT: usize = 312;
+}
+#[cfg(all(not(feature = "v3"), target_arch = "xtensa"))]
+pub mod size_struct {
     // pub const MBEDTLS_ECP_GROUP: usize = ;
     // pub const MBEDTLS_MPI: usize = ;
     // pub const MBEDTLS_X509_CRT: usize = ;
