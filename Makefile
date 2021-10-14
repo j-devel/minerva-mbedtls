@@ -24,6 +24,7 @@ test-examples:
 build:
 	cargo build --lib --release
 	cargo +nightly-i686-unknown-linux-gnu build --lib --release --target i686-unknown-linux-gnu --no-default-features
+	## FIXME: need building `bindgen` of `psa-crypto-sys` in 32bit context ## cargo +nightly-i686-unknown-linux-gnu build --lib --release --target i686-unknown-linux-gnu
 
 test:
 	make build
