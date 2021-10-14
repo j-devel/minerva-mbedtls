@@ -7,7 +7,7 @@ lts-xtensa:
 	##TODO## make -j CC=gcc CFLAGS="-m32 -O2 -DMBEDTLS_ARIA_C=ON" LDFLAGS="-m32" lib
 
 v3-x86:
-	##TODO## make -j CFLAGS="-m32 -O2 -DMBEDTLS_USE_PSA_CRYPTO=ON" LDFLAGS="-m32" lib
+	make -j CFLAGS="-m32 -O2 -DMBEDTLS_USE_PSA_CRYPTO=ON" LDFLAGS="-m32" lib
 
 lts-x86:
 	make -j CC=gcc CFLAGS="-m32 -O2 -DMBEDTLS_ARIA_C=ON" LDFLAGS="-m32" lib
