@@ -22,15 +22,14 @@ test-examples:
         make -C ./examples/$$name test || exit 1; done
 
 build:
-	##cargo build --lib --release
-	cargo +nightly-i686-unknown-linux-gnu build \
-		--lib --release --target i686-unknown-linux-gnu --no-default-features
+	cargo build --lib --release
+	cargo +nightly-i686-unknown-linux-gnu build --lib --release --target i686-unknown-linux-gnu --no-default-features
+
 test:
-	##make build
-	cargo +nightly-i686-unknown-linux-gnu test \
-		--target i686-unknown-linux-gnu --no-default-features
+	make build
+	cargo +nightly-i686-unknown-linux-gnu test --target i686-unknown-linux-gnu --no-default-features
 	cargo test --no-default-features
 	cargo test --no-default-features --features "std"
-	##cargo test
-	##cargo test --features "std"
-	##make test-examples
+	cargo test
+	cargo test --features "std"
+	make test-examples
