@@ -20,10 +20,12 @@ fn main() -> std::io::Result<()> {
         _ => "x86_64",
     });
 
+    let xtensa_gcc = if target.starts_with("xtensa-") {
+        Some(env::var("XTENSA_GCC").expect("XTENSA_GCC"))
+    } else { None };
+
     let lib_dir = format!("{}/library", mbedtls);
     let include_dir = format!("{}/include", mbedtls);
-
-    //
 
     if !Path::new(&mbedtls).exists() {
         Command::new("git")
@@ -33,8 +35,6 @@ fn main() -> std::io::Result<()> {
         Command::new("make")
             .args(&["-C", &mbedtls, "-f", "../out.mk", &out_mk_target]).status()?;
     }
-
-    //
 
     println!("cargo:rerun-if-changed={}", lib_dir);
     println!("cargo:rustc-link-search=native={}", lib_dir);
@@ -48,6 +48,9 @@ fn main() -> std::io::Result<()> {
     let mut cfg = cc::Build::new();
     if is_v3 {
         cfg.define("MINERVA_MBEDTLS_GLUE_V3", None);
+    }
+    if let Some(cc) = xtensa_gcc {
+        cfg.compiler(cc);
     }
     cfg.include(include_dir)
         .file("src/glue.c")

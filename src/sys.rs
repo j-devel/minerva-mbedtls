@@ -15,6 +15,7 @@ pub struct mbedtls_pk_context {
 
 impl mbedtls_pk_context {
     pub fn new() -> Self {
+        //unsafe { glue::glue_debug_sizeof(); } // debug
         Self {
             pk_info: core::ptr::null(),
             pk_ctx: core::ptr::null_mut(),
