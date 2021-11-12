@@ -24,9 +24,6 @@ fn main() -> std::io::Result<()> {
         Some(env::var("XTENSA_GCC").expect("XTENSA_GCC"))
     } else { None };
 
-    let lib_dir = format!("{}/library", mbedtls);
-    let include_dir = format!("{}/include", mbedtls);
-
     if !Path::new(&mbedtls).exists() {
         Command::new("git")
             .args(&["clone", "-b", branch, "https://github.com/ARMmbed/mbedtls", &mbedtls]).status()?;
@@ -36,6 +33,7 @@ fn main() -> std::io::Result<()> {
             .args(&["-C", &mbedtls, "-f", "../out.mk", &out_mk_target]).status()?;
     }
 
+    let lib_dir = format!("{}/library", mbedtls);
     println!("cargo:rerun-if-changed={}", lib_dir);
     println!("cargo:rustc-link-search=native={}", lib_dir);
     println!("cargo:rustc-link-lib=static=mbedtls");
@@ -52,7 +50,9 @@ fn main() -> std::io::Result<()> {
     if let Some(cc) = xtensa_gcc {
         cfg.compiler(cc);
     }
-    cfg.include(include_dir)
+    cfg.include(format!("{}/include", mbedtls))
+        .include(format!("{}/tests/include", mbedtls))
+        .file(format!("{}/tests/src/random.c", mbedtls))
         .file("src/glue.c")
         .compile("libglue-mbedtls.a");
 
