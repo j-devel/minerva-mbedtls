@@ -47,12 +47,28 @@ impl pk_context {
     }
 
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> bool {
-        let result = self.0.verify(ty, hash, &asn1_from_signature(sig));
+        self.verify_asn1(ty, hash, &asn1_from_signature(sig))
+    }
+
+    pub fn verify_asn1(&mut self, ty: md_type, hash: &[u8], sig_asn1: &[u8]) -> bool {
+        let result = self.0.verify(ty, hash, sig_asn1);
         if result != 0 {
-            println!("error code: {}", result);
+            println!("verify_asn1(): error code: {}", result);
         }
 
         result == 0
+    }
+
+    pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>) -> &mut Self {
+        let result = self.0.parse_key(
+            &crate::null_terminate_bytes!(key),
+            pwd.map(|bytes| bytes.clone()));
+
+        if result != 0 {
+            println!("parse_key(): error code: {}", result);
+        }
+
+        self
     }
 }
 
@@ -293,6 +309,35 @@ fn test_pk_drop() {
     } // `pk_context::drop()` is called
 
     //assert!(false); // uncomment this to see `drop()` works
+}
+
+#[test]
+fn test_pk_sign_02_00_2e() {
+    #[cfg(feature = "v3")] { v3::psa_crypto_init(); }
+
+    let md_ty = md_type::MBEDTLS_MD_SHA256;
+    let hash = &[106, 89, 235, 58, 30, 187, 255, 243, 109, 213, 190, 148, 10, 189, 99, 109, 245, 189, 49, 17, 191, 161, 61, 17, 16, 123, 135, 119, 223, 123, 126, 174];
+
+    //
+
+    let pem = "-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIJZu2S7Bm5PnAIM6RKYsOza3Q+z3UZHUrVr/BMxzk3KZoAoGCCqGSM49
+AwEHoUQDQgAEey+I0TtIhm8ivRJY36vF5ZRHs/IwhQWRc2Ql70rN+aYLZPOIXYc6
+ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
+-----END EC PRIVATE KEY-----
+";
+    let mut pk = pk_context::new();
+    pk.parse_key(pem.as_bytes(), None);
+
+    //
+
+    let sig = /* asn1 */ &[48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107];
+    //==== WIP
+    //pk.sign();
+
+    //
+
+    assert!(pk.verify_asn1(md_ty, hash, sig));
 }
 
 #[test]

@@ -4,6 +4,8 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/x509_crt.h"
 
+#include "test/random.h"
+
 extern mbedtls_pk_context * glue_get_pk_of(mbedtls_x509_crt *crt) {
 #ifdef MINERVA_MBEDTLS_GLUE_V3
     // https://github.com/ARMmbed/mbedtls/blob/development/docs/3.0-migration-guide.md#most-structure-fields-are-now-private
@@ -41,4 +43,8 @@ extern void glue_debug_sizeof(void) {
     printf("  sizeof(mbedtls_x509_buf): %zu\n", glue_sizeof_mbedtls_x509_buf());
     printf("  sizeof(mbedtls_x509_name): %zu\n", glue_sizeof_mbedtls_x509_name());
     printf("  sizeof(mbedtls_x509_time): %zu\n", glue_sizeof_mbedtls_x509_time());
+}
+
+extern void * glue_test_f_rng_ptr() {
+    return (void *)mbedtls_test_rnd_std_rand;
 }

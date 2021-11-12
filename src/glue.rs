@@ -43,6 +43,8 @@ extern "C" {
     pub fn glue_get_pk_of(crt: *const core::ffi::c_void) -> *const core::ffi::c_void;
     pub fn glue_debug_sizeof();
 
+    pub fn glue_test_f_rng_ptr() -> *const core::ffi::c_void;
+
     fn glue_sizeof_mbedtls_ecp_group() -> usize;
     fn glue_sizeof_mbedtls_mpi() -> usize;
     fn glue_sizeof_mbedtls_x509_crt() -> usize;
