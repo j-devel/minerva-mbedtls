@@ -45,6 +45,34 @@ impl mbedtls_pk_context {
             hash.as_ptr(), hash.len() as size_t,
             sig.as_ptr(), sig.len() as size_t) }
     }
+
+    pub fn parse_key(
+        &mut self,
+        key: &[u8],
+        pwd: Option<&[u8]>,
+    ) -> c_int {
+        let (pwd_ptr, pwd_len) = if let Some(bytes) = pwd {
+            (bytes.as_ptr(), bytes.len())
+        } else {
+            (core::ptr::null(), 0)
+        };
+
+        #[cfg(feature = "v3")]
+        {
+            unsafe { mbedtls_pk_parse_key(
+                self,
+                key.as_ptr(), key.len() as size_t,
+                pwd_ptr, pwd_len as size_t,
+                test_f_rng_ptr(), core::ptr::null()) }
+        }
+        #[cfg(not(feature = "v3"))]
+        {
+            unsafe { mbedtls_pk_parse_key(
+                self,
+                key.as_ptr(), key.len() as size_t,
+                pwd_ptr, pwd_len as size_t) }
+        }
+    }
 }
 
 //
@@ -82,6 +110,57 @@ extern "C" { // library/pk.c
         sig: *const c_uchar,
         sig_len: size_t,
     ) -> c_int;
+
+    //
+
+    #[cfg(feature = "v3")]
+    pub fn mbedtls_pk_sign(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const c_uchar,
+        hash_len: size_t,
+        sig: *mut c_uchar,    // "#MBEDTLS_PK_SIGNATURE_MAX_SIZE is always enough. You may use a smaller buffer if it is large enough given the key type."
+        sig_size: size_t,     // "The size of the \p sig buffer in bytes."
+        sig_len: *mut size_t, // "On successful return, the number of bytes written to \p sig."
+        f_rng: *const c_void, // int (*f_rng)(void *, unsigned char *, size_t)
+        p_rng: *const c_void, // void *p_rng
+    ) -> c_int;
+    #[cfg(not(feature = "v3"))]
+    pub fn mbedtls_pk_sign(
+        ctx: *mut mbedtls_pk_context,
+        md_alg: mbedtls_md_type_t,
+        hash: *const c_uchar,
+        hash_len: size_t,
+        sig: *mut c_uchar,
+        sig_len: *mut size_t,
+        f_rng: *const c_void, // int (*f_rng)(void *, unsigned char *, size_t)
+        p_rng: *const c_void, // void *p_rng
+    ) -> c_int;
+
+    //
+
+    #[cfg(feature = "v3")]
+    pub fn mbedtls_pk_parse_key(
+        ctx: *mut mbedtls_pk_context,
+        key: *const c_uchar,
+        key_len: size_t,
+        pwd: *const c_uchar,
+        pwd_len: size_t,
+        f_rng: *const c_void, // int (*f_rng)(void *, unsigned char *, size_t)
+        p_rng: *const c_void, // void *p_rng
+    ) -> c_int;
+    #[cfg(not(feature = "v3"))]
+    pub fn mbedtls_pk_parse_key(
+        ctx: *mut mbedtls_pk_context,
+        key: *const c_uchar,
+        key_len: size_t,
+        pwd: *const c_uchar,
+        pwd_len: size_t,
+    ) -> c_int;
+}
+
+pub fn test_f_rng_ptr() -> *const c_void {
+    unsafe { glue::glue_test_f_rng_ptr() }
 }
 
 //
