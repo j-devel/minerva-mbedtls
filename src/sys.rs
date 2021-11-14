@@ -1,9 +1,9 @@
 use super::glue;
 
 #[cfg(feature = "std")]
-use std::os::raw::*;
+pub use std::os::raw::*;
 #[cfg(not(feature = "std"))]
-use mcu_if::c_types::*;
+pub use mcu_if::c_types::*;
 
 pub type size_t = c_uint;
 
@@ -50,6 +50,8 @@ impl mbedtls_pk_context {
         &mut self,
         key: &[u8],
         pwd: Option<&[u8]>,
+        f_rng: *const c_void,
+        p_rng: *const c_void,
     ) -> c_int {
         let (pwd_ptr, pwd_len) = if let Some(bytes) = pwd {
             (bytes.as_ptr(), bytes.len())
@@ -59,14 +61,16 @@ impl mbedtls_pk_context {
 
         #[cfg(feature = "v3")]
         {
+            assert!(! f_rng.is_null());
             unsafe { mbedtls_pk_parse_key(
                 self,
                 key.as_ptr(), key.len() as size_t,
                 pwd_ptr, pwd_len as size_t,
-                test_f_rng_ptr(), core::ptr::null()) }
+                f_rng, p_rng) }
         }
         #[cfg(not(feature = "v3"))]
         {
+            let _ = (f_rng, p_rng);
             unsafe { mbedtls_pk_parse_key(
                 self,
                 key.as_ptr(), key.len() as size_t,

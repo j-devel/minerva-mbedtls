@@ -59,13 +59,34 @@ impl pk_context {
         result == 0
     }
 
-    pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>) -> &mut Self {
+    pub fn test_f_rng_ptr() -> *const c_void {
+        test_f_rng_ptr()
+    }
+
+    #[cfg(feature = "v3")]
+    pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>, f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
+        assert!(! f_rng.is_null());
         let result = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
-            pwd.map(|bytes| bytes.clone()));
+            pwd.map(|bytes| bytes.clone()),
+            f_rng, p_rng);
 
         if result != 0 {
             println!("parse_key(): error code: {}", result);
+        }
+
+        self
+    }
+
+    #[cfg(not(feature = "v3"))]
+    pub fn parse_key_lts(&mut self, key: &[u8], pwd: Option<&[u8]>) -> &mut Self {
+        let result = self.0.parse_key(
+            &crate::null_terminate_bytes!(key),
+            pwd.map(|bytes| bytes.clone()),
+            core::ptr::null(), core::ptr::null());
+
+        if result != 0 {
+            println!("parse_key_lts(): error code: {}", result);
         }
 
         self
@@ -327,7 +348,15 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 -----END EC PRIVATE KEY-----
 ";
     let mut pk = pk_context::new();
-    pk.parse_key(pem.as_bytes(), None);
+
+    #[cfg(feature = "v3")]
+    {
+        pk.parse_key(pem.as_bytes(), None, pk_context::test_f_rng_ptr(), core::ptr::null());
+    }
+    #[cfg(not(feature = "v3"))]
+    {
+        pk.parse_key_lts(pem.as_bytes(), None);
+    }
 
     //
 
