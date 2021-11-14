@@ -4,8 +4,6 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/x509_crt.h"
 
-#include "test/random.h"
-
 extern mbedtls_pk_context * glue_get_pk_of(mbedtls_x509_crt *crt) {
 #ifdef MINERVA_MBEDTLS_GLUE_V3
     // https://github.com/ARMmbed/mbedtls/blob/development/docs/3.0-migration-guide.md#most-structure-fields-are-now-private
@@ -45,6 +43,37 @@ extern void glue_debug_sizeof(void) {
     printf("  sizeof(mbedtls_x509_time): %zu\n", glue_sizeof_mbedtls_x509_time());
 }
 
+#ifdef MINERVA_MBEDTLS_GLUE_V3
+#include "test/random.h"
+
 extern void * glue_test_f_rng_ptr() {
     return (void *)mbedtls_test_rnd_std_rand;
 }
+#else
+#include <stdlib.h>
+
+// https://github.com/ARMmbed/mbedtls/blob/62d5f8101e5161c1fedf34e5a29153befe5cb146/tests/suites/helpers.function#L703
+static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
+{
+#if !defined(__OpenBSD__) && !defined(__NetBSD__)
+    size_t i;
+
+    if( rng_state != NULL )
+        rng_state  = NULL;
+
+    for( i = 0; i < len; ++i )
+        output[i] = rand();
+#else
+    if( rng_state != NULL )
+        rng_state = NULL;
+
+    arc4random_buf( output, len );
+#endif /* !OpenBSD && !NetBSD */
+
+    return( 0 );
+}
+
+extern void * glue_test_f_rng_ptr() {
+    return (void *)rnd_std_rand;
+}
+#endif // MINERVA_MBEDTLS_GLUE_V3

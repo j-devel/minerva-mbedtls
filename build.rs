@@ -45,14 +45,14 @@ fn main() -> std::io::Result<()> {
     println!("cargo:rerun-if-changed=src/glue.c");
     let mut cfg = cc::Build::new();
     if is_v3 {
-        cfg.define("MINERVA_MBEDTLS_GLUE_V3", None);
+        cfg.define("MINERVA_MBEDTLS_GLUE_V3", None)
+            .include(format!("{}/tests/include", mbedtls))
+            .file(format!("{}/tests/src/random.c", mbedtls));
     }
     if let Some(cc) = xtensa_gcc {
         cfg.compiler(cc);
     }
     cfg.include(format!("{}/include", mbedtls))
-        .include(format!("{}/tests/include", mbedtls))
-        .file(format!("{}/tests/src/random.c", mbedtls))
         .file("src/glue.c")
         .compile("libglue-mbedtls.a");
 
