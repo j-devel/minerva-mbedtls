@@ -1,9 +1,9 @@
 use super::glue;
 
 #[cfg(feature = "std")]
-pub use std::os::raw::*;
+pub use std::{os::raw::*, vec, vec::Vec};
 #[cfg(not(feature = "std"))]
-pub use mcu_if::c_types::*;
+pub use mcu_if::{c_types::*, alloc::{vec, vec::Vec}};
 
 pub type size_t = c_uint;
 
@@ -44,6 +44,45 @@ impl mbedtls_pk_context {
             self, ty,
             hash.as_ptr(), hash.len() as size_t,
             sig.as_ptr(), sig.len() as size_t) }
+    }
+
+    pub fn sign(
+        &mut self,
+        ty: mbedtls_md_type_t,
+        hash: &[u8],
+        sig: &mut Vec<u8>,
+        f_rng: *const c_void,
+        p_rng: *const c_void,
+    ) -> c_int {
+        assert!(! f_rng.is_null());
+
+        let mut sig_buf = vec![0u8; unsafe { glue::glue_mbedtls_pk_signature_max_size() }];
+        let mut sig_out_len = 0;
+        let ret = {
+            #[cfg(feature = "v3")]
+            {
+                unsafe { mbedtls_pk_sign(
+                    self, ty,
+                    hash.as_ptr(), hash.len() as size_t,
+                    sig_buf.as_mut_ptr(), sig_buf.len() as size_t, &mut sig_out_len,
+                    f_rng, p_rng) }
+            }
+            #[cfg(not(feature = "v3"))]
+            {
+                unsafe { mbedtls_pk_sign(
+                    self, ty,
+                    hash.as_ptr(), hash.len() as size_t,
+                    sig_buf.as_mut_ptr(), &mut sig_out_len,
+                    f_rng, p_rng) }
+            }
+        };
+
+        if ret == 0 {
+            sig_buf.truncate(sig_out_len as usize);
+            *sig = sig_buf;
+        }
+
+        ret
     }
 
     pub fn parse_key(
@@ -135,7 +174,7 @@ extern "C" { // library/pk.c
         md_alg: mbedtls_md_type_t,
         hash: *const c_uchar,
         hash_len: size_t,
-        sig: *mut c_uchar,
+        sig: *mut c_uchar,    // "In order to ensure enough space for the signature, the \p sig buffer size must be of at least `max(MBEDTLS_ECDSA_MAX_LEN, MBEDTLS_MPI_MAX_SIZE)` bytes."
         sig_len: *mut size_t,
         f_rng: *const c_void, // int (*f_rng)(void *, unsigned char *, size_t)
         p_rng: *const c_void, // void *p_rng

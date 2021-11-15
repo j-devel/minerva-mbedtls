@@ -59,12 +59,23 @@ impl pk_context {
         result == 0
     }
 
+    pub fn sign(&mut self, ty: md_type, hash: &[u8], sig: &mut Vec<u8>,
+                f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
+        let result = self.0.sign(ty, hash, sig, f_rng, p_rng);
+        if result != 0 {
+            println!("sign(): error code: {}", result);
+        }
+
+        self
+    }
+
     pub fn test_f_rng_ptr() -> *const c_void {
         test_f_rng_ptr()
     }
 
     #[cfg(feature = "v3")]
-    pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>, f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
+    pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>,
+                     f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
         assert!(! f_rng.is_null());
         let result = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
@@ -348,25 +359,22 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 -----END EC PRIVATE KEY-----
 ";
     let mut pk = pk_context::new();
+    let f_rng = pk_context::test_f_rng_ptr();
 
     #[cfg(feature = "v3")]
     {
-        pk.parse_key(pem.as_bytes(), None, pk_context::test_f_rng_ptr(), core::ptr::null());
+        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null());
     }
     #[cfg(not(feature = "v3"))]
     {
         pk.parse_key_lts(pem.as_bytes(), None);
     }
 
-    //
+    let mut sig = vec![];
+    pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null());
+    assert_eq!(sig, /* asn1 */ [48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107]);
 
-    let sig = /* asn1 */ &[48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107];
-    //==== WIP
-    //pk.sign();
-
-    //
-
-    assert!(pk.verify_asn1(md_ty, hash, sig));
+    assert!(pk.verify_asn1(md_ty, hash, &sig));
 }
 
 #[test]
