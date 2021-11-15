@@ -43,6 +43,8 @@ extern void glue_debug_sizeof(void) {
     printf("  sizeof(mbedtls_x509_time): %zu\n", glue_sizeof_mbedtls_x509_time());
 }
 
+//
+
 #ifdef MINERVA_MBEDTLS_GLUE_V3
 #include "test/random.h"
 
@@ -77,3 +79,17 @@ extern void * glue_test_f_rng_ptr() {
     return (void *)rnd_std_rand;
 }
 #endif // MINERVA_MBEDTLS_GLUE_V3
+
+//
+
+#define MAX( x, y ) ( ( x ) > ( y ) ? ( x ) : ( y ) )
+
+extern size_t glue_mbedtls_pk_signature_max_size() {
+#ifdef MINERVA_MBEDTLS_GLUE_V3
+    return MBEDTLS_PK_SIGNATURE_MAX_SIZE;
+#else
+    return MAX(MBEDTLS_ECDSA_MAX_LEN, MBEDTLS_MPI_MAX_SIZE);
+#endif
+}
+
+//

@@ -44,6 +44,7 @@ extern "C" {
     pub fn glue_debug_sizeof();
 
     pub fn glue_test_f_rng_ptr() -> *const core::ffi::c_void;
+    pub fn glue_mbedtls_pk_signature_max_size() -> usize;
 
     fn glue_sizeof_mbedtls_ecp_group() -> usize;
     fn glue_sizeof_mbedtls_mpi() -> usize;
@@ -52,8 +53,10 @@ extern "C" {
 
 #[test]
 fn test_glue() {
-    unsafe { glue_debug_sizeof() }
+    unsafe { glue_debug_sizeof(); }
     // assert!(false); // debug
+
+    assert_eq!(unsafe { glue_mbedtls_pk_signature_max_size() }, 1024);
 
     assert_eq!(unsafe { glue_sizeof_mbedtls_ecp_group() }, size_struct::MBEDTLS_ECP_GROUP);
     assert_eq!(unsafe { glue_sizeof_mbedtls_mpi() }, size_struct::MBEDTLS_MPI);
