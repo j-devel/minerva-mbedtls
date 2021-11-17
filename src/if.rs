@@ -1,5 +1,5 @@
 use super::sys::*;
-use super::utils::asn1_from_signature;
+use super::utils::{asn1_signature_from, is_asn1_signature};
 
 #[cfg(feature = "std")]
 use std::{println, vec, vec::Vec};
@@ -47,7 +47,13 @@ impl pk_context {
     }
 
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> bool {
-        self.verify_asn1(ty, hash, &asn1_from_signature(sig))
+        let sig = if is_asn1_signature(sig) {
+            sig.to_vec()
+        } else {
+            asn1_signature_from(sig)
+        };
+
+        self.verify_asn1(ty, hash, &sig)
     }
 
     pub fn verify_asn1(&mut self, ty: md_type, hash: &[u8], sig_asn1: &[u8]) -> bool {
@@ -451,7 +457,7 @@ fn test_pk_debug() {
             .md(msg);
         assert_eq!(hash, /* jada */ &[45, 106, 33, 97, 249, 125, 54, 185, 225, 237, 251, 191, 101, 21, 189, 9, 181, 239, 153, 225, 101, 54, 111, 15, 208, 136, 97, 182, 140, 57, 230, 157]);
 
-        let sig = &asn1_from_signature(&[
+        let sig = &asn1_signature_from(&[
             234, 232, 104, 236, 193, 118, 136, 55, 102, 197, 220, 91, 165, 184, 220, 162, 93, 171, 60, 46, 86, 165, 81, 206, 87, 5, 183, 147, 145, 67, 72, 225, 145, 46, 83, 95, 231, 182, 170, 68, 123, 26, 104, 156, 7, 204, 120, 204, 21, 231, 109, 98, 125, 108, 112, 63, 147, 120, 2, 102, 156, 19, 172, 227
         ]);
 

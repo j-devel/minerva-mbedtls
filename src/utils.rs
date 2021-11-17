@@ -3,7 +3,7 @@ use std::{vec, vec::Vec};
 #[cfg(not(feature = "std"))]
 use mcu_if::{alloc::{vec, vec::Vec}};
 
-pub fn asn1_from_signature(signature: &[u8]) -> Vec<u8> {
+pub fn asn1_signature_from(signature: &[u8]) -> Vec<u8> {
     let half = signature.len() / 2;
     let h = half as u8;
     let mut asn1 = vec![];
@@ -13,4 +13,17 @@ pub fn asn1_from_signature(signature: &[u8]) -> Vec<u8> {
     asn1.extend_from_slice(&signature[half..]); // s
 
     asn1
+}
+
+pub fn is_asn1_signature(sig: &[u8]) -> bool {
+    let sig_len = sig.len();
+    let seq_len = sig_len - 2;
+    let int_len = seq_len / 2 - 2;
+
+    sig[0] == 48 &&
+        sig[1] as usize == seq_len &&
+        sig[2] == 2 &&
+        sig[3] as usize == int_len &&
+        sig[sig_len - int_len - 2] == 2 &&
+        sig[sig_len - int_len - 1] as usize == int_len
 }
