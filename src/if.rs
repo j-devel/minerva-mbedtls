@@ -59,7 +59,7 @@ impl pk_context {
     pub fn verify_asn1(&mut self, ty: md_type, hash: &[u8], sig_asn1: &[u8]) -> bool {
         let result = self.0.verify(ty, hash, sig_asn1);
         if result != 0 {
-            println!("verify_asn1(): error code: {}", result);
+            println!(".verify_asn1(): error code: {}", result);
         }
 
         result == 0
@@ -69,7 +69,7 @@ impl pk_context {
                 f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
         let result = self.0.sign(ty, hash, sig, f_rng, p_rng);
         if result != 0 {
-            println!("sign(): error code: {}", result);
+            println!(".sign(): error code: {}", result);
         }
 
         self
@@ -89,7 +89,7 @@ impl pk_context {
             f_rng, p_rng);
 
         if result != 0 {
-            println!("parse_key(): error code: {}", result);
+            println!(".parse_key(): error code: {}", result);
         }
 
         self
@@ -103,7 +103,7 @@ impl pk_context {
             core::ptr::null(), core::ptr::null());
 
         if result != 0 {
-            println!("parse_key_lts(): error code: {}", result);
+            println!(".parse_key_lts(): error code: {}", result);
         }
 
         self
@@ -272,7 +272,7 @@ impl x509_crt {
         if result > 0 {
             println!("{} certificates couldn't be parsed", result);
         } else if result < 0 {
-            println!("error code: {}", result);
+            println!(".parse(): error code: {}", result);
         }
 
         self
@@ -283,7 +283,7 @@ impl x509_crt {
         let result = self.0.info(&mut buf, "@@ ");
 
         if result < 0 {
-            println!("error code: {}", result);
+            println!(".info(): error code: {}", result);
             return self;
         }
 
