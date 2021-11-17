@@ -81,7 +81,7 @@ impl pk_context {
 
     #[cfg(feature = "v3")]
     pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>,
-                     f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
+                     f_rng: *const c_void, p_rng: *const c_void) -> Result<&mut Self, c_int> {
         assert!(! f_rng.is_null());
         let result = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
@@ -90,13 +90,14 @@ impl pk_context {
 
         if result != 0 {
             println!(".parse_key(): error code: {}", result);
+            return Err(result);
         }
 
-        self
+        Ok(self)
     }
 
     #[cfg(not(feature = "v3"))]
-    pub fn parse_key_lts(&mut self, key: &[u8], pwd: Option<&[u8]>) -> &mut Self {
+    pub fn parse_key_lts(&mut self, key: &[u8], pwd: Option<&[u8]>) -> Result<&mut Self, c_int> {
         let result = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
             pwd.map(|bytes| bytes.clone()),
@@ -104,9 +105,10 @@ impl pk_context {
 
         if result != 0 {
             println!(".parse_key_lts(): error code: {}", result);
+            return Err(result);
         }
 
-        self
+        Ok(self)
     }
 }
 
@@ -369,11 +371,11 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 
     #[cfg(feature = "v3")]
     {
-        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null());
+        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null()).unwrap();
     }
     #[cfg(not(feature = "v3"))]
     {
-        pk.parse_key_lts(pem.as_bytes(), None);
+        pk.parse_key_lts(pem.as_bytes(), None).unwrap();
     }
 
     let mut sig = vec![];
