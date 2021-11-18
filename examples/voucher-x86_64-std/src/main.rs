@@ -52,5 +52,6 @@ impl Validate for Voucher {
             .info() // debug
             .pk_mut()
             .verify(md_ty, hash, sig)
+            .unwrap()
     }
 }

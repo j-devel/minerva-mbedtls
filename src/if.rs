@@ -48,7 +48,7 @@ impl pk_context {
         if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
-    pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> bool {
+    pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> Result<bool, c_int> {
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
         } else {
@@ -58,13 +58,10 @@ impl pk_context {
         self.verify_asn1(ty, hash, &sig)
     }
 
-    pub fn verify_asn1(&mut self, ty: md_type, hash: &[u8], sig_asn1: &[u8]) -> bool {
-        let result = self.0.verify(ty, hash, sig_asn1);
-        if result != 0 {
-            println!(".verify_asn1(): error code: {}", result);
-        }
+    pub fn verify_asn1(&mut self, ty: md_type, hash: &[u8], sig_asn1: &[u8]) -> Result<bool, c_int> {
+        let ret = self.0.verify(ty, hash, sig_asn1);
 
-        result == 0
+        if ret == 0 { Ok(true) } else { Err(ret) }
     }
 
     pub fn sign(&mut self, ty: md_type, hash: &[u8], sig: &mut Vec<u8>,
@@ -371,7 +368,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
     pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null()).unwrap();
     assert_eq!(sig, /* asn1 */ [48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107]);
 
-    assert!(pk.verify_asn1(md_ty, hash, &sig));
+    assert!(pk.verify_asn1(md_ty, hash, &sig).unwrap());
 }
 
 #[test]
@@ -406,7 +403,8 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
         .parse(pem.as_bytes())
         .info() // debug
         .pk_mut()
-        .verify(md_ty, hash, sig));
+        .verify(md_ty, hash, sig)
+        .unwrap());
 }
 
 #[test]
@@ -430,7 +428,8 @@ fn test_pk_verify_jada() -> Result<(), c_int> {
         .setup(pk_type::MBEDTLS_PK_ECKEY)?
         .set_grp(grp)
         .set_q(pt)
-        .verify(md_ty, hash, sig));
+        .verify(md_ty, hash, sig)
+        .unwrap());
 
     Ok(())
 }
