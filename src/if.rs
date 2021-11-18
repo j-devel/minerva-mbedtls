@@ -68,13 +68,10 @@ impl pk_context {
     }
 
     pub fn sign(&mut self, ty: md_type, hash: &[u8], sig: &mut Vec<u8>,
-                f_rng: *const c_void, p_rng: *const c_void) -> &mut Self {
-        let result = self.0.sign(ty, hash, sig, f_rng, p_rng);
-        if result != 0 {
-            println!(".sign(): error code: {}", result);
-        }
+                f_rng: *const c_void, p_rng: *const c_void) -> Result<&mut Self, c_int> {
+        let ret = self.0.sign(ty, hash, sig, f_rng, p_rng);
 
-        self
+        if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
     pub fn test_f_rng_ptr() -> *const c_void {
@@ -85,32 +82,22 @@ impl pk_context {
     pub fn parse_key(&mut self, key: &[u8], pwd: Option<&[u8]>,
                      f_rng: *const c_void, p_rng: *const c_void) -> Result<&mut Self, c_int> {
         assert!(! f_rng.is_null());
-        let result = self.0.parse_key(
+        let ret = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
             pwd.map(|bytes| bytes.clone()),
             f_rng, p_rng);
 
-        if result != 0 {
-            println!(".parse_key(): error code: {}", result);
-            return Err(result);
-        }
-
-        Ok(self)
+        if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
     #[cfg(not(feature = "v3"))]
     pub fn parse_key_lts(&mut self, key: &[u8], pwd: Option<&[u8]>) -> Result<&mut Self, c_int> {
-        let result = self.0.parse_key(
+        let ret = self.0.parse_key(
             &crate::null_terminate_bytes!(key),
             pwd.map(|bytes| bytes.clone()),
             core::ptr::null(), core::ptr::null());
 
-        if result != 0 {
-            println!(".parse_key_lts(): error code: {}", result);
-            return Err(result);
-        }
-
-        Ok(self)
+        if ret == 0 { Ok(self) } else { Err(ret) }
     }
 }
 
@@ -381,7 +368,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
     }
 
     let mut sig = vec![];
-    pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null());
+    pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null()).unwrap();
     assert_eq!(sig, /* asn1 */ [48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107]);
 
     assert!(pk.verify_asn1(md_ty, hash, &sig));
