@@ -255,27 +255,21 @@ impl x509_crt {
         (unsafe { pk.as_ref() }).unwrap()
     }
 
-    pub fn parse(&mut self, buf: &[u8]) -> &mut Self {
-        let result = self.0.parse(&crate::null_terminate_bytes!(buf));
-        if result > 0 {
-            println!("{} certificates couldn't be parsed", result);
-        } else if result < 0 {
-            println!(".parse(): error code: {}", result);
-        }
+    pub fn parse(&mut self, buf: &[u8]) -> Result<&mut Self, mbedtls_error> {
+        let ret = self.0.parse(&crate::null_terminate_bytes!(buf));
 
-        self
+        if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
-    pub fn info(&self) -> &Self {
+    pub fn info(&self) -> Result<&Self, mbedtls_error> {
         let mut buf = [0; 2000];
-        let result = self.0.info(&mut buf, "@@ ");
+        let ret = self.0.info(&mut buf, "@@ ");
 
-        if result < 0 {
-            println!(".info(): error code: {}", result);
-            return self;
+        if ret < 0 {
+            return Err(ret);
         }
 
-        let info = &buf[.. result as usize];
+        let info = &buf[.. ret as usize];
 
         #[cfg(feature = "std")]
         {
@@ -289,7 +283,7 @@ impl x509_crt {
         }
         //assert!(false); // debug
 
-        self
+        Ok(self)
     }
 }
 
@@ -328,17 +322,19 @@ fn test_md_hash() {
 }
 
 #[test]
-fn test_pk_drop() {
+fn test_pk_drop() -> Result<(), c_int> {
     {
         let mut pk = pk_context::new();
-        pk.setup(pk_type::MBEDTLS_PK_ECKEY).unwrap();
+        pk.setup(pk_type::MBEDTLS_PK_ECKEY)?;
     } // `pk_context::drop()` is called
 
     //assert!(false); // uncomment this to see `drop()` works
+
+    Ok(())
 }
 
 #[test]
-fn test_pk_sign_02_00_2e() {
+fn test_pk_sign_02_00_2e() -> Result<(), c_int> {
     #[cfg(feature = "v3")] { v3::psa_crypto_init(); }
 
     let md_ty = md_type::MBEDTLS_MD_SHA256;
@@ -357,22 +353,24 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 
     #[cfg(feature = "v3")]
     {
-        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null()).unwrap();
+        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null())?;
     }
     #[cfg(not(feature = "v3"))]
     {
-        pk.parse_key_lts(pem.as_bytes(), None).unwrap();
+        pk.parse_key_lts(pem.as_bytes(), None)?;
     }
 
     let mut sig = vec![];
-    pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null()).unwrap();
+    pk.sign(md_ty, hash, &mut sig, f_rng, core::ptr::null())?;
     assert_eq!(sig, /* asn1 */ [48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107]);
 
-    assert!(pk.verify_asn1(md_ty, hash, &sig).unwrap());
+    assert!(pk.verify_asn1(md_ty, hash, &sig)?);
+
+    Ok(())
 }
 
 #[test]
-fn test_pk_verify_f2_00_02() {
+fn test_pk_verify_f2_00_02() -> Result<(), c_int> {
     #[cfg(feature = "v3")] { v3::psa_crypto_init(); }
 
     let pem = "-----BEGIN CERTIFICATE-----
@@ -400,11 +398,12 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 
     // c.f. `x509parse_crt()` of 'mbedtls/tests/suites/test_suite_x509parse.function'
     assert!(x509_crt::new()
-        .parse(pem.as_bytes())
-        .info() // debug
+        .parse(pem.as_bytes())?
+        .info()? // debug
         .pk_mut()
-        .verify(md_ty, hash, sig)
-        .unwrap());
+        .verify(md_ty, hash, sig)?);
+
+    Ok(())
 }
 
 #[test]
@@ -428,8 +427,7 @@ fn test_pk_verify_jada() -> Result<(), c_int> {
         .setup(pk_type::MBEDTLS_PK_ECKEY)?
         .set_grp(grp)
         .set_q(pt)
-        .verify(md_ty, hash, sig)
-        .unwrap());
+        .verify(md_ty, hash, sig)?);
 
     Ok(())
 }

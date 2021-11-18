@@ -48,8 +48,8 @@ impl Validate for Voucher {
         let hash = &md_info::from_type(md_ty).md(to_verify);
 
         x509_crt::new()
-            .parse(masa_pem.unwrap())
-            .info() // debug
+            .parse(masa_pem.unwrap()).unwrap()
+            .info().unwrap() // debug
             .pk_mut()
             .verify(md_ty, hash, sig)
             .unwrap()
