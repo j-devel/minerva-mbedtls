@@ -6,6 +6,8 @@ use std::{println, vec, vec::Vec};
 #[cfg(not(feature = "std"))]
 use mcu_if::{println, alloc::{vec, vec::Vec}};
 
+pub type mbedtls_error = c_int;
+
 //
 
 pub struct pk_context(mbedtls_pk_context);
@@ -40,10 +42,10 @@ impl pk_context {
         self.0.pk_ctx as *mut mbedtls_ecp_keypair
     }
 
-    pub fn setup(&mut self, ty: pk_type) -> &mut Self {
-        self.0.setup(ty);
+    pub fn setup(&mut self, ty: pk_type) -> Result<&mut Self, c_int> {
+        let ret = self.0.setup(ty);
 
-        self
+        if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> bool {
@@ -345,7 +347,7 @@ fn test_md_hash() {
 fn test_pk_drop() {
     {
         let mut pk = pk_context::new();
-        pk.setup(pk_type::MBEDTLS_PK_ECKEY);
+        pk.setup(pk_type::MBEDTLS_PK_ECKEY).unwrap();
     } // `pk_context::drop()` is called
 
     //assert!(false); // uncomment this to see `drop()` works
@@ -421,7 +423,7 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 }
 
 #[test]
-fn test_pk_verify_jada() {
+fn test_pk_verify_jada() -> Result<(), c_int> {
     #[cfg(feature = "v3")] { v3::psa_crypto_init(); }
 
     let grp = ecp_group::from_id(ecp_group_id::MBEDTLS_ECP_DP_SECP256R1);
@@ -438,10 +440,12 @@ fn test_pk_verify_jada() {
     ];
 
     assert!(pk_context::new()
-        .setup(pk_type::MBEDTLS_PK_ECKEY)
+        .setup(pk_type::MBEDTLS_PK_ECKEY)?
         .set_grp(grp)
         .set_q(pt)
         .verify(md_ty, hash, sig));
+
+    Ok(())
 }
 
 #[test]
@@ -489,9 +493,10 @@ fn test_pk_debug() {
         };
         mbedtls_pk_init(&mut pk);
 
-        mbedtls_pk_setup(
+        let ret = mbedtls_pk_setup(
             &mut pk,
             mbedtls_pk_info_from_type(mbedtls_pk_type_t::MBEDTLS_PK_ECKEY));
+        assert_eq!(ret, 0);
 
         //
 

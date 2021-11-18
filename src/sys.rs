@@ -30,8 +30,8 @@ impl mbedtls_pk_context {
         unsafe { mbedtls_pk_init(self); }
     }
 
-    pub fn setup(&mut self, ty: mbedtls_pk_type_t) {
-        unsafe { mbedtls_pk_setup(self, mbedtls_pk_info_from_type(ty)); }
+    pub fn setup(&mut self, ty: mbedtls_pk_type_t) -> c_int {
+        unsafe { mbedtls_pk_setup(self, mbedtls_pk_info_from_type(ty)) }
     }
 
     pub fn verify(
