@@ -1,18 +1,21 @@
 #[cfg(feature = "std")]
-use std::{vec, vec::Vec};
+use std::{vec, vec::Vec, io::{self, Cursor, Write}};
 #[cfg(not(feature = "std"))]
-use mcu_if::{alloc::{vec, vec::Vec}};
+use mcu_if::{alloc::{vec, vec::Vec}, core2::io::{self as io, Cursor, Write}};
 
-pub fn asn1_signature_from(signature: &[u8]) -> Vec<u8> {
-    let half = signature.len() / 2;
+pub fn asn1_signature_from(sig: &[u8]) -> io::Result<Vec<u8>> {
+    let sig_len = sig.len();
+    let half = sig_len / 2;
     let h = half as u8;
-    let mut asn1 = vec![];
-    asn1.extend_from_slice(&[48, 2 * h + 6, 2, h + 1, 0]);
-    asn1.extend_from_slice(&signature[..half]); // r
-    asn1.extend_from_slice(&[2, h + 1, 0]);
-    asn1.extend_from_slice(&signature[half..]); // s
 
-    asn1
+    let mut asn1 = vec![0u8; sig_len + 8];
+    let mut writer = Cursor::new(&mut asn1[..]);
+    writer.write(&[48, 2 * h + 6, 2, h + 1, 0])?;
+    writer.write(&sig[..half])?; // r
+    writer.write(&[2, h + 1, 0])?;
+    writer.write(&sig[half..])?; // s
+
+    Ok(asn1)
 }
 
 pub fn is_asn1_signature(sig: &[u8]) -> bool {

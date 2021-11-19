@@ -49,10 +49,16 @@ impl pk_context {
     }
 
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> Result<bool, c_int> {
+
+
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
         } else {
-            asn1_signature_from(sig)
+            if let Ok(asn1) = asn1_signature_from(sig) {
+                asn1
+            } else {
+                return Ok(false);
+            }
         };
 
         self.verify_asn1(ty, hash, &sig)
