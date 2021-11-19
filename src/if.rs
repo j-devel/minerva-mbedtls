@@ -50,6 +50,12 @@ impl pk_context {
 
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> Result<bool, c_int> {
 
+        // FIXME -- on xtensa, `sig.len()` not reflecting the correct slice length...
+        let sig = if sig.len() > 1_000 {
+            &sig[0..64] // kludge
+        } else {
+            sig
+        };
 
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
