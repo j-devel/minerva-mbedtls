@@ -50,7 +50,8 @@ fn main() -> std::io::Result<()> {
             .file(format!("{}/tests/src/random.c", mbedtls));
     }
     if let Some(cc) = xtensa_gcc {
-        cfg.compiler(cc);
+        cfg.define("__XTENSA__", None)
+            .compiler(cc);
     }
     cfg.include(format!("{}/include", mbedtls))
         .file("src/glue.c")

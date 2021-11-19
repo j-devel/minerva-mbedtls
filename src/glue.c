@@ -64,7 +64,11 @@ static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
         rng_state  = NULL;
 
     for( i = 0; i < len; ++i )
+  #ifdef __XTENSA__
+        output[i] = 42; // kludge
+  #else
         output[i] = rand();
+  #endif
 #else
     if( rng_state != NULL )
         rng_state = NULL;
