@@ -51,6 +51,7 @@ impl pk_context {
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> Result<bool, c_int> {
 
         // FIXME -- on xtensa, `sig.len()` not reflecting the correct slice length...
+        //   CHECK -- previously working fine though? -- https://github.com/AnimaGUS-minerva/iot-rust-module-studio/actions/runs/1466188913
         let sig = if sig.len() > 1_000 {
             &sig[0..64] // kludge
         } else {
