@@ -52,8 +52,10 @@ impl pk_context {
 
         // FIXME -- on xtensa, `sig.len()` not reflecting the correct slice length...
         //   CHECK -- previously working fine though? -- https://github.com/AnimaGUS-minerva/iot-rust-module-studio/actions/runs/1466188913
-        let sig = if sig.len() > 1_000 {
-            &sig[0..64] // kludge
+        //if 1 == 1 { panic!("sig.len(): {}", sig.len()); }
+        let sig = if sig.len() > 999 { // kludge
+            let asn1ish = |s: &[u8]| s[0] == 48 && s[1] == 70 && s[2] == 2 && s[3] == 33;
+            if asn1ish(sig) { &sig[0..72] } else { &sig[0..64] }
         } else {
             sig
         };
@@ -79,6 +81,11 @@ impl pk_context {
 
     pub fn sign(&mut self, ty: md_type, hash: &[u8], sig: &mut Vec<u8>,
                 f_rng: *const c_void, p_rng: *const c_void) -> Result<&mut Self, c_int> {
+
+        // FIXME -- on xtensa, `f_rng`'s value changes somehow...
+        let f_rng_kludge = test_f_rng_ptr();
+        let f_rng = if f_rng != f_rng_kludge { f_rng_kludge } else { f_rng };
+
         let ret = self.0.sign(ty, hash, sig, f_rng, p_rng);
 
         if ret == 0 { Ok(self) } else { Err(ret) }

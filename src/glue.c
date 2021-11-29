@@ -57,6 +57,7 @@ extern void * glue_test_f_rng_ptr() {
 // https://github.com/ARMmbed/mbedtls/blob/62d5f8101e5161c1fedf34e5a29153befe5cb146/tests/suites/helpers.function#L703
 static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
 {
+    printf("rnd_std_rand(): ^^\n");
 #if !defined(__OpenBSD__) && !defined(__NetBSD__)
     size_t i;
 
@@ -80,6 +81,7 @@ static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
 }
 
 extern void * glue_test_f_rng_ptr() {
+    //printf("glue_test_f_rng_ptr(): rnd_std_rand: %p\n", rnd_std_rand);
     return (void *)rnd_std_rand;
 }
 #endif // MINERVA_MBEDTLS_GLUE_V3
