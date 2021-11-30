@@ -51,8 +51,12 @@ impl pk_context {
         //   CHECK -- previously working fine though? -- https://github.com/AnimaGUS-minerva/iot-rust-module-studio/actions/runs/1466188913
         //if 1 == 1 { panic!("sig.len(): {}", sig.len()); }
         let sig = if sig.len() > 999 { // kludge
-            let asn1ish = |s: &[u8]| s[0] == 48 && s[1] == 70 && s[2] == 2 && s[3] == 33;
-            if asn1ish(sig) { &sig[0..72] } else { &sig[0..64] }
+            let maybe_bare = &sig[0..64];
+
+            if sig[0] == 48 && sig[2] == 2 {
+                let maybe_asn1 = &sig[0..(sig[1] as usize + 2)];
+                if is_asn1_signature(maybe_asn1) { maybe_asn1 } else { maybe_bare }
+            } else { maybe_bare }
         } else {
             sig
         };
