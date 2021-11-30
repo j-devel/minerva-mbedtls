@@ -1,9 +1,11 @@
 use super::glue;
 
+use crate::{vec, Vec};
+
 #[cfg(feature = "std")]
-pub use std::{os::raw::*, vec, vec::Vec};
+pub use std::os::raw::*;
 #[cfg(not(feature = "std"))]
-pub use mcu_if::{c_types::*, alloc::{vec, vec::Vec}};
+pub use mcu_if::c_types::*;
 
 pub type size_t = c_uint;
 
@@ -386,10 +388,7 @@ extern "C" {
 
 #[test]
 fn test_mbedtls_x509_crt() {
-    #[cfg(feature = "std")]
-    use std::println;
-    #[cfg(not(feature = "std"))]
-    use mcu_if::println;
+    use super::println;
 
     assert_eq!(core::mem::size_of::<mbedtls_x509_crt>(), glue::size_struct::MBEDTLS_X509_CRT);
 

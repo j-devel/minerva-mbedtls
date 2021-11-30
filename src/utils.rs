@@ -1,7 +1,4 @@
-#[cfg(feature = "std")]
-use std::{vec, vec::Vec, io::{self, Cursor, Write}};
-#[cfg(not(feature = "std"))]
-use mcu_if::{alloc::{vec, vec::Vec}, core2::io::{self as io, Cursor, Write}};
+use crate::{vec, Vec, io::{self, Cursor, Write}};
 
 pub fn asn1_signature_from(sig: &[u8]) -> io::Result<Vec<u8>> {
     let sig_len = sig.len();

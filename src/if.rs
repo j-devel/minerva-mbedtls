@@ -1,10 +1,7 @@
 use super::sys::*;
 use super::utils::{asn1_signature_from, is_asn1_signature};
 
-#[cfg(feature = "std")]
-use std::{println, vec, vec::Vec};
-#[cfg(not(feature = "std"))]
-use mcu_if::{println, alloc::{vec, vec::Vec}};
+use crate::{println, vec, Vec};
 
 pub type mbedtls_error = c_int;
 
