@@ -45,37 +45,7 @@ impl pk_context {
         if ret == 0 { Ok(self) } else { Err(ret) }
     }
 
-    pub fn verify_debug_esp32_a(&self, ty: u8, hash: &[u8], sig: &[u8], sig2: &[u8]) -> Result<bool, c_int> {
-        println!("@@ verify_debug_esp32_a():");
-        println!("  ty: {:?}", ty);
-        println!("  len={}  &hash[0..4]: {:?}", hash.len(), &hash[0..4]);
-        println!("  len={}  &sig[0..4]: {:?}", sig.len(), &sig[0..4]);
-        println!("  len={}  &sig2[0..4]: {:?}", sig2.len(), &sig2[0..4]);
-        Ok(false)
-    }
-    pub fn verify_debug_esp32_b(&self, hash: &[u8], sig: &[u8], sig2: &[u8]) -> Result<bool, c_int> {
-        println!("@@ verify_debug_esp32_b():");
-        println!("  len={}  &hash[0..4]: {:?}", hash.len(), &hash[0..4]);
-        println!("  len={}  &sig[0..4]: {:?}", sig.len(), &sig[0..4]);
-        println!("  len={}  &sig2[0..4]: {:?}", sig2.len(), &sig2[0..4]);
-        Ok(false)
-    }
-
     pub fn verify(&mut self, ty: md_type, hash: &[u8], sig: &[u8]) -> Result<bool, c_int> {
-        // FIXME -- on xtensa, `sig.len()` not reflecting the correct slice length...
-        //   CHECK -- previously working fine though? -- https://github.com/AnimaGUS-minerva/iot-rust-module-studio/actions/runs/1466188913
-        //if 1 == 1 { panic!("sig.len(): {}", sig.len()); }
-        let sig = if sig.len() > 999 { // kludge
-            let maybe_bare = &sig[0..64];
-
-            if sig[0] == 48 && sig[2] == 2 {
-                let maybe_asn1 = &sig[0..(sig[1] as usize + 2)];
-                if is_asn1_signature(maybe_asn1) { maybe_asn1 } else { maybe_bare }
-            } else { maybe_bare }
-        } else {
-            sig
-        };
-
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
         } else {
@@ -97,11 +67,6 @@ impl pk_context {
 
     pub fn sign(&mut self, ty: md_type, hash: &[u8], sig: &mut Vec<u8>,
                 f_rng: *const c_void, p_rng: *const c_void) -> Result<&mut Self, c_int> {
-
-        // FIXME -- on xtensa, `f_rng`'s value changes somehow...
-        let f_rng_kludge = test_f_rng_ptr();
-        let f_rng = if f_rng != f_rng_kludge { f_rng_kludge } else { f_rng };
-
         let ret = self.0.sign(ty, hash, sig, f_rng, p_rng);
 
         if ret == 0 { Ok(self) } else { Err(ret) }
