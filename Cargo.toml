@@ -13,10 +13,8 @@ v3 = ["psa-crypto"]
 std = []
 
 [dependencies]
-mcu-if = { git = "https://github.com/AnimaGUS-minerva/mcu-if", rev = "6543b39" }
-
+mcu-if = { git = "https://github.com/AnimaGUS-minerva/mcu-if", rev = "984b8dd" }
 psa-crypto = { git = "https://github.com/AnimaGUS-minerva/rust-psa-crypto", rev = "828695d", optional = true }
-#psa-crypto = { path = "../rust-psa-crypto/psa-crypto", optional = true } # debug
 
 [build-dependencies]
 cc = "1.0"
