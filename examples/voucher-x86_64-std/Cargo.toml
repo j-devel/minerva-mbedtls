@@ -6,4 +6,4 @@ authors = ["ANIMA Minerva toolkit"]
 
 [dependencies]
 minerva-mbedtls = { path = "../..", features = ["std"] }
-minerva-voucher = { git = "https://github.com/AnimaGUS-minerva/voucher", rev = "84b3c2a", default-features = false }
+minerva-voucher = { git = "https://github.com/AnimaGUS-minerva/voucher", rev = "6e102be", default-features = false }

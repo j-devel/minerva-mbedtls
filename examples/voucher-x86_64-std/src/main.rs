@@ -1,19 +1,17 @@
 use minerva_mbedtls::ifce::{md_type, md_info, x509_crt};
 use minerva_mbedtls::psa_crypto; // https://docs.rs/psa-crypto/0.9.0/psa_crypto/
 
-fn main() -> std::io::Result<()> {
+fn main() -> Result<(), VoucherError> {
     psa_crypto::init().unwrap();
     psa_crypto::initialized().unwrap();
 
-    let res = Voucher::from(VOUCHER_F2_00_02)
-        .validate(Some(MASA_PEM_F2_00_02.as_bytes()));
-
-    println!("voucher verify: {}", if res { "SUCCESS" } else { "FAIL" });
+    Voucher::try_from(VOUCHER_F2_00_02)?
+        .validate(Some(MASA_PEM_F2_00_02))?;
 
     Ok(())
 }
 
-static MASA_PEM_F2_00_02: &str = "-----BEGIN CERTIFICATE-----
+static MASA_PEM_F2_00_02: &[u8] = b"-----BEGIN CERTIFICATE-----
 MIIByzCCAVKgAwIBAgIESltVuTAKBggqhkjOPQQDAjBTMRIwEAYKCZImiZPyLGQB
 GRYCY2ExGTAXBgoJkiaJk/IsZAEZFglzYW5kZWxtYW4xIjAgBgNVBAMMGWhpZ2h3
 YXktdGVzdC5zYW5kZWxtYW4uY2EwHhcNMTgxMTIyMTg1MjAxWhcNMjAxMTIxMTg1
@@ -30,28 +28,32 @@ static VOUCHER_F2_00_02: &[u8] = &[210, 132, 67, 161, 1, 38, 160, 89, 2, 183, 16
 
 //
 
-use minerva_voucher::{Voucher as BaseVoucher, Validate};
+use minerva_voucher::{Voucher as BaseVoucher, Validate, VoucherError};
+use std::convert::TryFrom;
 
 struct Voucher(BaseVoucher);
 
-impl Voucher {
-    pub fn from(raw: &[u8]) -> Self {
-        Voucher(BaseVoucher::from(raw))
+impl TryFrom<&[u8]> for Voucher {
+    type Error = VoucherError;
+    fn try_from(raw: &[u8]) -> Result<Self, Self::Error> {
+        Ok(Self(BaseVoucher::try_from(raw)?))
     }
 }
 
 impl Validate for Voucher {
-    fn validate(&self, masa_pem: Option<&[u8]>) -> bool {
-        let (_, sig, _, to_verify) = self.0.to_validate();
+    fn validate(&self, masa_pem: Option<&[u8]>) -> Result<&Self, VoucherError> {
+        let (_, sig_alg, to_verify) = self.0.to_validate();
+        let (signature, _) = sig_alg.unwrap();
 
         let md_ty = md_type::MBEDTLS_MD_SHA256;
         let hash = &md_info::from_type(md_ty).md(to_verify);
+        let err = Err(VoucherError::ValidationFailed);
 
         x509_crt::new()
             .parse(masa_pem.unwrap()).unwrap()
             .info().unwrap() // debug
             .pk_mut()
-            .verify(md_ty, hash, sig)
-            .unwrap()
+            .verify(md_ty, hash, signature)
+            .map_or(err, |x| if x { Ok(self) } else { err })
     }
 }
