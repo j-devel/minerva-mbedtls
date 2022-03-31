@@ -5,8 +5,10 @@ fn main() -> Result<(), VoucherError> {
     psa_crypto::init().unwrap();
     psa_crypto::initialized().unwrap();
 
-    Voucher::try_from(VOUCHER_F2_00_02)?
-        .validate(Some(MASA_PEM_F2_00_02))?;
+    let res = Voucher::try_from(VOUCHER_F2_00_02)?
+        .validate(Some(MASA_PEM_F2_00_02))
+        .is_ok();
+    println!("voucher validation: {}", if res { "SUCCESS" } else { "FAIL" });
 
     Ok(())
 }
