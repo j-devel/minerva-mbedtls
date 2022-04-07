@@ -13,14 +13,10 @@ use mcu_if::{println, alloc::{vec, vec::Vec}, core2::io};
 
 use mcu_if::{cstr_from, null_terminate_str, null_terminate_bytes};
 
-mod glue;
-
-pub mod sys;
-
-pub mod r#if;
-pub use r#if as ifce;
-
 #[cfg(feature = "v3")]
 pub use psa_crypto;
 
+mod glue;
+pub mod sys;
+pub mod ifce;
 pub mod utils;
