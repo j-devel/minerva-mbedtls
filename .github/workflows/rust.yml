@@ -37,4 +37,5 @@ jobs:
       run: |
           sudo apt update
           sudo apt install gcc-multilib
+          sudo apt install gcc-i686-linux-gnu
           make ci
