@@ -227,7 +227,7 @@ impl md_info {
 //
 
 #[cfg(feature = "v3")]
-mod psa_crypto_ffi {
+pub mod psa_crypto_ffi {
     use super::*;
 
     //

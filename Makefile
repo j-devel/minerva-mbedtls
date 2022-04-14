@@ -16,7 +16,7 @@ init-rust-x86_64-nightly:
 	rustup toolchain install nightly-x86_64-unknown-linux-gnu
 	rustup target add x86_64-unknown-linux-gnu
 
-NAMES := voucher-x86_64-std
+NAMES := voucher-x86_64-std voucher-x86-no_std
 test-examples:
 	for name in $(NAMES); do \
         make -C ./examples/$$name test || exit 1; done
