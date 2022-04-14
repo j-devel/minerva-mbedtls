@@ -35,7 +35,6 @@ test-lts-x86_64:
 	cargo test --no-default-features --features "std"
 
 test-v3-x86:
-	## WIP
 	cargo build --lib --release --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu --features "std"
@@ -50,5 +49,5 @@ test:
 	make test-examples
 	rm -rf target && make test-v3-x86_64
 	rm -rf target && make test-lts-x86_64
-	##rm -rf target && make test-v3-x86
+	rm -rf target && make test-v3-x86
 	rm -rf target && make test-lts-x86

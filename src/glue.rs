@@ -10,9 +10,9 @@ pub mod size_struct {
 }
 #[cfg(all(feature = "v3", target_arch = "x86"))]
 pub mod size_struct {
-    // pub const MBEDTLS_ECP_GROUP: usize = ;
-    // pub const MBEDTLS_MPI: usize = ;
-    // pub const MBEDTLS_X509_CRT: usize = ;
+    pub const MBEDTLS_ECP_GROUP: usize = 124;
+    pub const MBEDTLS_MPI: usize = 12;
+    pub const MBEDTLS_X509_CRT: usize = 344;
 }
 #[cfg(all(feature = "v3", target_arch = "xtensa"))]
 pub mod size_struct {
