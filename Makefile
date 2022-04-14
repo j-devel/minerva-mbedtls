@@ -23,14 +23,32 @@ test-examples:
 
 build:
 	cargo build --lib --release
-	cargo +nightly-i686-unknown-linux-gnu build --lib --release --target i686-unknown-linux-gnu --no-default-features
-	## FIXME: need building `bindgen` of `psa-crypto-sys` in 32bit context ## cargo +nightly-i686-unknown-linux-gnu build --lib --release --target i686-unknown-linux-gnu
+
+test-v3-x86_64:
+	cargo build --lib --release
+	cargo test
+	cargo test --features "std"
+
+test-lts-x86_64:
+	cargo build --lib --release --no-default-features
+	cargo test --no-default-features
+	cargo test --no-default-features --features "std"
+
+test-v3-x86:
+	## WIP
+	cargo build --lib --release --target i686-unknown-linux-gnu
+	cargo test --target i686-unknown-linux-gnu
+	cargo test --target i686-unknown-linux-gnu --features "std"
+
+test-lts-x86:
+	cargo build --lib --release --target i686-unknown-linux-gnu --no-default-features
+	cargo test --target i686-unknown-linux-gnu --no-default-features
+	cargo test --target i686-unknown-linux-gnu --no-default-features --features "std"
 
 test:
 	make build
-	cargo +nightly-i686-unknown-linux-gnu test --target i686-unknown-linux-gnu --no-default-features
-	cargo test --no-default-features
-	cargo test --no-default-features --features "std"
-	cargo test
-	cargo test --features "std"
 	make test-examples
+	rm -rf target && make test-v3-x86_64
+	rm -rf target && make test-lts-x86_64
+	##rm -rf target && make test-v3-x86
+	rm -rf target && make test-lts-x86
