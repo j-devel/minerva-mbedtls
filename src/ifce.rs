@@ -274,7 +274,64 @@ pub mod psa_crypto_ffi {
     // x509_crt
     //
 
+    use psa_crypto::ffi;
+
+    pub struct x509_crt(ffi::x509_crt);
+
+    impl Drop for x509_crt {
+        fn drop(&mut self) {
+            unsafe { ffi::x509_crt_free(&mut self.0) }
+        }
+    }
+
+    impl x509_crt {
+        pub fn new() -> Self {
+            let mut crt = ffi::x509_crt::default();
+            unsafe { ffi::x509_crt_init(&mut crt) }
+
+            Self(crt)
+        }
+
+        pub fn parse(&mut self, buf: &[u8]) -> Result<&mut Self, mbedtls_error> {
+            let buf = &crate::null_terminate_bytes!(buf);
+            let ret = unsafe {
+                ffi::x509_crt_parse(&mut self.0, buf.as_ptr(), buf.len())
+            };
+
+            if ret == 0 { Ok(self) } else { Err(ret) }
+        }
+
+        pub fn info(&self) -> Result<&Self, mbedtls_error> {
+            let mut buf = [0; 2000];
+            let ret = unsafe {
+                ffi::x509_crt_info(buf.as_mut_ptr(), buf.len(), crate::cstr_from!("@@ "), &self.0)
+            };
+
+            if ret < 0 {
+                return Err(ret);
+            }
+
+            let info = &buf[.. ret as usize];
+
+            #[cfg(feature = "std")]
+            {
+                let info = std::string::String::from_utf8_lossy(info);
+                println!("info:\n{}", info);
+            }
+            #[cfg(not(feature = "std"))]
+            {
+                println!("raw info len: {}", info.len());
+                //println!("raw info: {:?}", info);
+            }
+            //assert!(false); // debug
+
+            Ok(self)
+        }
+    }
+
+    //
     // ...
+    //
 }
 
 //
@@ -378,7 +435,27 @@ fn test_psa_crypto_ffi() {
     }
 
     { // x509_crt
-        // ...
+        use psa_crypto_ffi::x509_crt;
+
+        let pem = "-----BEGIN CERTIFICATE-----
+MIIByzCCAVKgAwIBAgIESltVuTAKBggqhkjOPQQDAjBTMRIwEAYKCZImiZPyLGQB
+GRYCY2ExGTAXBgoJkiaJk/IsZAEZFglzYW5kZWxtYW4xIjAgBgNVBAMMGWhpZ2h3
+YXktdGVzdC5zYW5kZWxtYW4uY2EwHhcNMTgxMTIyMTg1MjAxWhcNMjAxMTIxMTg1
+MjAxWjBXMRIwEAYKCZImiZPyLGQBGRYCY2ExGTAXBgoJkiaJk/IsZAEZFglzYW5k
+ZWxtYW4xJjAkBgNVBAMMHWhpZ2h3YXktdGVzdC5leGFtcGxlLmNvbSBNQVNBMFkw
+EwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqgQVo0S54kT4yfkbBxumdHOcHrpsqbOp
+MKmiMln3oB1HAW25MJV+gqi4tMFfSJ0iEwt8kszfWXK4rLgJS2mnpaMQMA4wDAYD
+VR0TAQH/BAIwADAKBggqhkjOPQQDAgNnADBkAjBkuTwpIGSZTJ3cDNv3RkZ9xR5F
+F+msNgl8HH50lTF47uRVn/FrY3S8GS1TjP9RGhoCMC8lEKi0zeSya9yYDdXuxUVy
+G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
+-----END CERTIFICATE-----
+";
+
+        assert!(x509_crt::new()
+            .parse(pem.as_bytes())
+            .unwrap()
+            .info()
+            .is_ok());
     }
 }
 
