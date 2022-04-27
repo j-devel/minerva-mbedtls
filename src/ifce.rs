@@ -439,7 +439,7 @@ fn test_psa_crypto_ffi() {
     { // x509_crt
         use psa_crypto_ffi::x509_crt;
 
-        let pem = "-----BEGIN CERTIFICATE-----
+        let pem = b"-----BEGIN CERTIFICATE-----
 MIIByzCCAVKgAwIBAgIESltVuTAKBggqhkjOPQQDAjBTMRIwEAYKCZImiZPyLGQB
 GRYCY2ExGTAXBgoJkiaJk/IsZAEZFglzYW5kZWxtYW4xIjAgBgNVBAMMGWhpZ2h3
 YXktdGVzdC5zYW5kZWxtYW4uY2EwHhcNMTgxMTIyMTg1MjAxWhcNMjAxMTIxMTg1
@@ -454,7 +454,7 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 ";
 
         assert!(x509_crt::new()
-            .parse(pem.as_bytes())
+            .parse(pem)
             .unwrap()
             .info()
             .is_ok());
@@ -496,7 +496,7 @@ fn test_pk_sign_02_00_2e() -> Result<(), c_int> {
 
     //
 
-    let pem = "-----BEGIN EC PRIVATE KEY-----
+    let pem = b"-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIJZu2S7Bm5PnAIM6RKYsOza3Q+z3UZHUrVr/BMxzk3KZoAoGCCqGSM49
 AwEHoUQDQgAEey+I0TtIhm8ivRJY36vF5ZRHs/IwhQWRc2Ql70rN+aYLZPOIXYc6
 ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
@@ -507,11 +507,11 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 
     #[cfg(feature = "v3")]
     {
-        pk.parse_key(pem.as_bytes(), None, f_rng, core::ptr::null())?;
+        pk.parse_key(pem, None, f_rng, core::ptr::null())?;
     }
     #[cfg(not(feature = "v3"))]
     {
-        pk.parse_key_lts(pem.as_bytes(), None)?;
+        pk.parse_key_lts(pem, None)?;
     }
 
     let mut sig = vec![];
@@ -527,7 +527,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 fn test_pk_verify_f2_00_02() -> Result<(), c_int> {
     #[cfg(feature = "v3")] { v3::psa_crypto_init(); }
 
-    let pem = "-----BEGIN CERTIFICATE-----
+    let pem = b"-----BEGIN CERTIFICATE-----
 MIIByzCCAVKgAwIBAgIESltVuTAKBggqhkjOPQQDAjBTMRIwEAYKCZImiZPyLGQB
 GRYCY2ExGTAXBgoJkiaJk/IsZAEZFglzYW5kZWxtYW4xIjAgBgNVBAMMGWhpZ2h3
 YXktdGVzdC5zYW5kZWxtYW4uY2EwHhcNMTgxMTIyMTg1MjAxWhcNMjAxMTIxMTg1
@@ -552,7 +552,7 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 
     // c.f. `x509parse_crt()` of 'mbedtls/tests/suites/test_suite_x509parse.function'
     assert!(x509_crt::new()
-        .parse(pem.as_bytes())?
+        .parse(pem)?
         .info()? // debug
         .pk_mut()
         .verify(md_ty, hash, sig)?);
