@@ -292,6 +292,14 @@ pub mod psa_crypto_ffi {
             Self(crt)
         }
 
+        pub fn pk(&self) -> &ffi::pk_context {
+            &self.0.private_pk
+        }
+
+        pub fn pk_mut(&mut self) -> &mut ffi::pk_context {
+            &mut self.0.private_pk
+        }
+
         pub fn parse(&mut self, buf: &[u8]) -> Result<&mut Self, mbedtls_error> {
             let buf = &crate::null_terminate_bytes!(buf);
             let ret = unsafe {
@@ -325,11 +333,63 @@ pub mod psa_crypto_ffi {
                 println!("raw info len: {}", info.len());
                 //println!("raw info: {:?}", info);
             }
-            //assert!(false); // debug
 
             Ok(self)
         }
     }
+
+    //
+    // pk_context
+    //
+
+/** ref - sys.rs
+    pub fn verify(
+        &mut self,
+        ty: mbedtls_md_type_t,
+        hash: &[u8],
+        sig: &[u8],
+    ) -> c_int {
+        unsafe { mbedtls_pk_verify(
+            self, ty,
+            hash.as_ptr(), hash.len() as size_t,
+            sig.as_ptr(), sig.len() as size_t) }
+    }
+ */
+    pub fn pk_verify(pk: &mut ffi::pk_context, ty: md_type_t, hash: &[u8], sig: &[u8]) -> Result<bool, mbedtls_error> {
+        let ret = unsafe { ffi::pk_verify(
+            pk as *mut ffi::pk_context, ty,
+            hash.as_ptr(), hash.len(), sig.as_ptr(), sig.len()) };
+
+        // TODO handle asn1 stuff for the `Ok(false)` cases
+
+        if ret == 0 { Ok(true) } else { Err(ret) }
+    }
+
+    pub struct pk_context(ffi::pk_context);
+
+    // impl Drop for pk_context {
+    //     fn drop(&mut self) {
+    //         unsafe { ffi::pk_free(&mut self.0) }
+    //     }
+    // }
+
+    impl pk_context {
+        // pub fn new() -> Self {
+        //     let mut pk = ffi::pk_context::default();
+        //     unsafe { ffi::pk_init(&mut pk) }
+        //
+        //     Self(pk)
+        // }
+    }
+    /*
+pub fn pk_verify (ctx : * mut pk_context ,
+    md_alg : md_type_t ,
+    hash : * const crate :: mbedtls :: types :: raw_types :: c_uchar ,
+    hash_len : size_t ,
+    sig : * const crate :: mbedtls :: types :: raw_types :: c_uchar ,
+    sig_len : size_t) ->
+crate :: mbedtls :: types :: raw_types :: c_int ; }
+ */
 
     //
     // ...
@@ -419,7 +479,7 @@ pub mod v3 {
 
 #[cfg(feature = "v3")]
 #[test]
-fn test_psa_crypto_ffi() {
+fn test_psa_crypto_ffi() -> Result<(), mbedtls_error> {
 
     { // md
         use psa_crypto_ffi::{md_info, MD_SHA256};
@@ -437,7 +497,7 @@ fn test_psa_crypto_ffi() {
     }
 
     { // x509_crt
-        use psa_crypto_ffi::x509_crt;
+        use psa_crypto_ffi::{x509_crt, pk_verify, MD_SHA256};
 
         let pem = b"-----BEGIN CERTIFICATE-----
 MIIByzCCAVKgAwIBAgIESltVuTAKBggqhkjOPQQDAjBTMRIwEAYKCZImiZPyLGQB
@@ -454,10 +514,18 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 ";
 
         assert!(x509_crt::new()
-            .parse(pem)
-            .unwrap()
+            .parse(pem)?
             .info()
             .is_ok());
+
+        //
+
+        let mut crt = x509_crt::new();
+        assert!(pk_verify(crt.parse(pem)?.pk_mut(), MD_SHA256, &[0u8], &[0u8])?); // WIP
+
+        //
+
+        Ok(())
     }
 }
 
