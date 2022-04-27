@@ -302,9 +302,11 @@ pub mod psa_crypto_ffi {
         }
 
         pub fn info(&self) -> Result<&Self, mbedtls_error> {
-            let mut buf = [0; 2000];
+            let mut buf = [0u8; 2000];
             let ret = unsafe {
-                ffi::x509_crt_info(buf.as_mut_ptr(), buf.len(), crate::cstr_from!("@@ "), &self.0)
+                ffi::x509_crt_info(
+                    buf.as_mut_ptr() as *mut i8,
+                    buf.len(), crate::cstr_from!("@@ "), &self.0)
             };
 
             if ret < 0 {
