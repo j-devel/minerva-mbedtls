@@ -305,7 +305,7 @@ pub mod psa_crypto_ffi {
             if ret == 0 { Ok(self) } else { Err(ret) }
         }
 
-        pub fn info(&self) -> Result<&Self, mbedtls_error> {
+        pub fn info(&mut self) -> Result<&mut Self, mbedtls_error> {
             let mut buf = [0u8; 2000];
             let ret = unsafe {
                 ffi::x509_crt_info(
@@ -493,21 +493,23 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
 -----END CERTIFICATE-----
 ";
 
-        assert!(x509_crt::new()
-            .parse(pem)?
-            .info()
-            .is_ok());
-
         //
 
         assert!(x509_crt::new()
             .parse(pem)?
+            .info()? // debug
             .pk_ctx()
-            .verify(MD_SHA256, &[0u8], &[0u8])?); // WIP
+            .verify(MD_SHA256, &[0u8], &[0u8])?);
 
         //
 
-        // WIP - test lifecycle w.r.t. `pk_context::{new,drop}`
+        // TODO
+        //---- lifecycle w.r.t. `pk_context::{new,drop}`
+        // #[test]
+        // fn test_pk_drop() -> Result<(), c_int> {
+        //---- `pk_context::{setup,set_grq,set_q}` stuff
+        // #[test]
+        // fn test_pk_verify_jada() -> Result<(), c_int> {
 
         //
 
