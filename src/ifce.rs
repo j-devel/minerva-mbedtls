@@ -1,3 +1,10 @@
+/*
+ * v0.4.x
+ *
+ * We will DEPRECATE '{ifce,sys,glue}.rs' when
+ * 'ifce_psa.rs' (our new `psa_crypto::ffi` based safe abstractions) is complete.
+ */
+
 use super::sys::*;
 use super::utils::{asn1_signature_from, is_asn1_signature};
 
