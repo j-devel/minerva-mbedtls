@@ -20,3 +20,6 @@ mod glue;
 pub mod sys;
 pub mod ifce;
 pub mod utils;
+
+#[cfg(feature = "v3")]
+pub mod ifce_psa;
