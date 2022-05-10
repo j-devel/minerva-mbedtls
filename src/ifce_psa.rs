@@ -126,6 +126,10 @@ impl Drop for pk_context {
 
 type FnRng = unsafe extern "C" fn(*mut ffi::raw_types::c_void, *mut u8, usize) -> i32;
 
+extern "C" {
+    fn rand() -> c_int;
+}
+
 impl pk_context {
     pub fn new() -> Self {
         let mut pk = ffi::pk_context::default();
@@ -152,16 +156,11 @@ impl pk_context {
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
         } else {
-            if let Ok(asn1) = asn1_signature_from(sig) {
-                asn1
-            } else {
-                return Ok(false);
-            }
+            if let Ok(asn1) = asn1_signature_from(sig) { asn1 } else { return Ok(false); }
         };
 
-        let ret = unsafe {
-            ffi::pk_verify(self.ptr_mut(), ty, hash.as_ptr(), hash.len(), sig.as_ptr(), sig.len())
-        };
+        let ret = unsafe { ffi::pk_verify(
+            self.ptr_mut(), ty, hash.as_ptr(), hash.len(), sig.as_ptr(), sig.len()) };
 
         if ret == 0 { Ok(true) } else { Err(ret) }
     }
@@ -213,9 +212,22 @@ impl pk_context {
         unsafe { core::mem::transmute(crate::glue::glue_test_f_rng_ptr()) }
     }
 
-    #[allow(unused_variables)] // !!
+    #[allow(unused_variables, unreachable_code)]
     extern "C" fn rnd_std_rand(rng_state: *mut ffi::raw_types::c_void, output: *mut u8, len: usize) -> i32 {
-        if 1 == 1 { panic!("TODO: port `rnd_std_rand()` of 'glue.c'"); }
+        let rng_state: *mut ffi::raw_types::c_void = core::ptr::null_mut();
+
+        let output: &mut [u8] = unsafe { core::slice::from_raw_parts_mut(output, len) };
+        for x in output.iter_mut() {
+            #[cfg(target_arch = "xtensa")]
+            {
+                unimplemented!("xtensa");
+            }
+            #[cfg(not(target_arch = "xtensa"))]
+            {
+                *x = unsafe { rand() as u8 };
+            }
+        }
+        panic!("output: {:?}", output); // !!
 
         0
     }
@@ -283,8 +295,8 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 
         let mut pk = pk_context::new();
 
-        let f_rng = Some(pk_context::test_f_rng_ptr()); // INTERIM
-        //let f_rng = Some(pk_context::rnd_std_rand); // TODO
+        //let f_rng = Some(pk_context::test_f_rng_ptr()); // INTERIM
+        let f_rng = Some(pk_context::rnd_std_rand as FnRng); // WIP
 
         pk.parse_key(pem, None, f_rng, core::ptr::null_mut())?;
 
