@@ -208,10 +208,6 @@ impl pk_context {
         } else { Err(ret) }
     }
 
-    pub fn test_f_rng_ptr() -> FnRng {
-        unsafe { core::mem::transmute(crate::glue::glue_test_f_rng_ptr()) }
-    }
-
     #[allow(unused_variables, unreachable_code)]
     extern "C" fn rnd_std_rand(rng_state: *mut ffi::raw_types::c_void, output: *mut u8, len: usize) -> i32 {
         let rng_state: *mut ffi::raw_types::c_void = core::ptr::null_mut();
@@ -227,7 +223,6 @@ impl pk_context {
                 *x = unsafe { rand() as u8 };
             }
         }
-        panic!("output: {:?}", output); // !!
 
         0
     }
@@ -294,9 +289,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 ";
 
         let mut pk = pk_context::new();
-
-        //let f_rng = Some(pk_context::test_f_rng_ptr()); // INTERIM
-        let f_rng = Some(pk_context::rnd_std_rand as FnRng); // WIP
+        let f_rng = Some(pk_context::rnd_std_rand as FnRng);
 
         pk.parse_key(pem, None, f_rng, core::ptr::null_mut())?;
 
