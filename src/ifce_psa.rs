@@ -14,11 +14,11 @@ use psa_crypto::ffi;
 // md
 //
 
-pub use ffi::{md_type_t, MD_SHA256, MD_SHA384, MD_SHA512};
+pub use ffi::{MD_SHA256, MD_SHA384, MD_SHA512, PK_ECKEY};
 pub struct md_info(*const ffi::md_info_t);
 
 impl md_info {
-    pub fn from_type(ty: md_type_t) -> Self {
+    pub fn from_type(ty: ffi::md_type_t) -> Self {
         Self(unsafe { ffi::md_info_from_type(ty) })
     }
 
@@ -26,7 +26,7 @@ impl md_info {
         Self(unsafe { ffi::md_info_from_string(crate::cstr_from!(s)) })
     }
 
-    pub fn get_type(&self) -> md_type_t {
+    pub fn get_type(&self) -> ffi::md_type_t {
         unsafe { ffi::md_get_type(self.0) }
     }
 
@@ -152,7 +152,29 @@ impl pk_context {
         }
     }
 
-    pub fn verify(&mut self, ty: md_type_t, hash: &[u8], sig: &[u8]) -> Result<bool, mbedtls_error> {
+    // pub fn set_grp(&mut self, grp: ecp_group) -> &mut Self {
+    //     unsafe { (*self.as_keypair()).grp = grp.0; }
+    //
+    //     self
+    // }
+    //
+    // pub fn set_q(&mut self, q: ecp_point) -> &mut Self {
+    //     unsafe { (*self.as_keypair()).q = q.0; }
+    //
+    //     self
+    // }
+    //
+    // fn as_keypair(&mut self) -> *mut mbedtls_ecp_keypair {
+    //     self.0.pk_ctx as *mut mbedtls_ecp_keypair
+    // }
+
+    pub fn setup(&mut self, ty: ffi::pk_type_t) -> Result<&mut Self, mbedtls_error> {
+        let ret = unsafe { ffi::pk_setup(self.ptr_mut(), ffi::pk_info_from_type(ty)) };
+
+        if ret == 0 { Ok(self) } else { Err(ret) }
+    }
+
+    pub fn verify(&mut self, ty: ffi::md_type_t, hash: &[u8], sig: &[u8]) -> Result<bool, mbedtls_error> {
         let sig = if is_asn1_signature(sig) {
             sig.to_vec()
         } else {
@@ -186,7 +208,7 @@ impl pk_context {
     }
 
     pub fn sign(
-        &mut self, ty: md_type_t, hash: &[u8], sig: &mut Vec<u8>,
+        &mut self, ty: ffi::md_type_t, hash: &[u8], sig: &mut Vec<u8>,
         f_rng: Option<FnRng>, p_rng: *mut c_void
     ) -> Result<&mut Self, mbedtls_error> {
         let sz = if ffi::PK_SIGNATURE_MAX_SIZE > 0 {
@@ -249,6 +271,32 @@ fn test_ifce_psa() -> Result<(), mbedtls_error> {
         );
     }
 
+    // pk_context: verify via `ecp`
+    {
+        // let grp = ecp_group::from_id(ecp_group_id::MBEDTLS_ECP_DP_SECP256R1);
+        //
+        // let mut pt = ecp_point::new();
+        // pt.read_binary(&grp, /* jada `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126]);
+        //
+        // let md_ty = md_type::MBEDTLS_MD_SHA256;
+        // let hash = &md_info::from_type(md_ty)
+        //     .md(/* jada `to_verify` */ &[132, 106, 83, 105, 103, 110, 97, 116, 117, 114, 101, 49, 65, 160, 64, 88, 185, 161, 26, 0, 15, 70, 140, 166, 5, 105, 112, 114, 111, 120, 105, 109, 105, 116, 121, 6, 193, 26, 87, 247, 248, 30, 8, 193, 26, 89, 208, 48, 0, 14, 109, 74, 65, 68, 65, 49, 50, 51, 52, 53, 54, 55, 56, 57, 11, 105, 97, 98, 99, 100, 49, 50, 51, 52, 53, 13, 120, 124, 77, 70, 107, 119, 69, 119, 89, 72, 75, 111, 90, 73, 122, 106, 48, 67, 65, 81, 89, 73, 75, 111, 90, 73, 122, 106, 48, 68, 65, 81, 99, 68, 81, 103, 65, 69, 78, 87, 81, 79, 122, 99, 78, 77, 85, 106, 80, 48, 78, 114, 116, 102, 101, 66, 99, 48, 68, 74, 76, 87, 102, 101, 77, 71, 103, 67, 70, 100, 73, 118, 54, 70, 85, 122, 52, 68, 105, 102, 77, 49, 117, 106, 77, 66, 101, 99, 47, 103, 54, 87, 47, 80, 54, 98, 111, 84, 109, 121, 84, 71, 100, 70, 79, 104, 47, 56, 72, 119, 75, 85, 101, 114, 76, 53, 98, 112, 110, 101, 75, 56, 115, 103, 61, 61]);
+        //
+        // let sig = &[
+        //     234, 232, 104, 236, 193, 118, 136, 55, 102, 197, 220, 91, 165, 184, 220, 162, 93, 171, 60, 46, 86, 165, 81, 206, 87, 5, 183, 147, 145, 67, 72, 225, 145, 46, 83, 95, 231, 182, 170, 68, 123, 26, 104, 156, 7, 204, 120, 204, 21, 231, 109, 98, 125, 108, 112, 63, 147, 120, 2, 102, 156, 19, 172, 227
+        // ];
+
+        // assert!(pk_context::new()
+        //     .setup(pk_type::MBEDTLS_PK_ECKEY)?
+        //     .set_grp(grp)
+        //     .set_q(pt)
+        //     .verify(md_ty, hash, sig)?);
+        //==== !!
+        let mut pk = pk_context::new();
+        pk.setup(PK_ECKEY).unwrap();
+
+    }
+
     // pk_context: verify via `x509_crt`
     {
         // product f2_00_02
@@ -298,12 +346,6 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
         assert_eq!(sig, /* asn1 */ [48, 70, 2, 33, 0, 226, 133, 204, 212, 146, 54, 173, 224, 191, 137, 104, 146, 5, 43, 216, 61, 167, 219, 192, 125, 138, 167, 160, 145, 26, 197, 52, 17, 94, 97, 210, 115, 2, 33, 0, 149, 230, 42, 127, 120, 31, 10, 28, 154, 2, 82, 16, 154, 165, 201, 129, 133, 192, 49, 15, 44, 159, 165, 129, 124, 210, 216, 67, 144, 174, 77, 107]);
 
         assert!(pk.verify(MD_SHA256, hash, &sig)?);
-    }
-
-    // pk_context: verify via `ecp`
-    // !! <--> #[test] fn test_pk_verify_jada() -> Result<(), c_int> {
-    {
-        // TODO
     }
 
     Ok(())
