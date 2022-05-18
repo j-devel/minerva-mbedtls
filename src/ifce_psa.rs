@@ -120,8 +120,6 @@ impl Drop for ecp_group {
     }
 }
 
-// ffi::ecp_group_init() .... .... ....
-
 pub struct ecp_group(ffi::ecp_group);
 
 impl ecp_group {
@@ -133,7 +131,10 @@ impl ecp_group {
     }
 
     pub fn new() -> Self {
-        Self(ffi::ecp_group::default())
+        let mut grp = ffi::ecp_group::default();
+        unsafe { ffi::ecp_group_init(&mut grp) }
+
+        Self(grp)
     }
 
     pub fn load(&mut self, gid: ffi::ecp_group_id) -> &Self {
@@ -186,9 +187,8 @@ impl pk_context {
         }
     }
 
-    pub fn set_group(&mut self, grp: ecp_group) -> &mut Self {
-        //unsafe { (*self.as_keypair()).grp = grp.0; }
-        // !!!!
+    pub fn set_grp(&mut self, grp: ecp_group) -> &mut Self {
+        unsafe { (*self.as_keypair()).private_grp = grp.0; }
 
         self
     }
@@ -198,10 +198,10 @@ impl pk_context {
     //
     //     self
     // }
-    //
-    // fn as_keypair(&mut self) -> *mut mbedtls_ecp_keypair {
-    //     self.0.pk_ctx as *mut mbedtls_ecp_keypair
-    // }
+
+    fn as_keypair(&mut self) -> *mut ffi::ecp_keypair {
+        (unsafe { *self.ptr_mut() }).private_pk_ctx as *mut ffi::ecp_keypair
+    }
 
     pub fn setup(&mut self, ty: ffi::pk_type_t) -> Result<&mut Self, mbedtls_error> {
         let ret = unsafe { ffi::pk_setup(self.ptr_mut(), ffi::pk_info_from_type(ty)) };
@@ -313,6 +313,7 @@ fn test_ifce_psa() -> Result<(), mbedtls_error> {
 
         // let mut pt = ecp_point::new();
         // pt.read_binary(&grp, /* jada `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126]);
+        //==== !!!!
 
         // let md_ty = md_type::MBEDTLS_MD_SHA256;
         // let hash = &md_info::from_type(md_ty)
@@ -331,10 +332,9 @@ fn test_ifce_psa() -> Result<(), mbedtls_error> {
         //==== !!
         assert!(pk_context::new()
             .setup(PK_ECKEY)?
-            .set_group(grp)
+            .set_grp(grp)
             //.set_q(pt)
             .verify(MD_SHA256, hash, sig)?);
-
     }
 
     // pk_context: verify via `x509_crt`
