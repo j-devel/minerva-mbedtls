@@ -114,20 +114,20 @@ impl x509_crt {
 // ecp_group
 //
 
+pub struct ecp_group(ffi::ecp_group);
+
 impl Drop for ecp_group {
     fn drop(&mut self) {
         unsafe { ffi::ecp_group_free(&mut self.0) }
     }
 }
 
-pub struct ecp_group(ffi::ecp_group);
-
 impl ecp_group {
-    pub fn from_id(id: ffi::ecp_group_id) -> Self {
+    pub fn from_id(id: ffi::ecp_group_id) -> Result<Self, mbedtls_error> {
         let mut grp = ecp_group::new();
-        grp.load(id);
+        grp.load(id)?;
 
-        grp
+        Ok(grp)
     }
 
     pub fn new() -> Self {
@@ -137,11 +137,43 @@ impl ecp_group {
         Self(grp)
     }
 
-    pub fn load(&mut self, gid: ffi::ecp_group_id) -> &Self {
+    pub fn load(&mut self, gid: ffi::ecp_group_id) -> Result<&mut Self, mbedtls_error> {
         let ret = unsafe { ffi::ecp_group_load(&mut self.0, gid) };
-        assert_eq!(ret, 0);
 
-        self
+        if ret == 0 { Ok(self) } else { Err(ret) }
+    }
+}
+
+//
+// ecp_point
+//
+
+pub struct ecp_point(Option<ffi::ecp_point>);
+
+impl Drop for ecp_point {
+    fn drop(&mut self) {
+        if let Some(mut pt) = self.0 {
+            unsafe { ffi::ecp_point_free(&mut pt) }
+        }
+    }
+}
+
+impl ecp_point {
+    pub fn new() -> Self {
+        let mut pt = ffi::ecp_point::default();
+        unsafe { ffi::ecp_point_init(&mut pt) }
+
+        Self(Some(pt))
+    }
+
+    pub fn read_binary(&mut self, grp: &ecp_group, bin: &[u8]) -> Result<&mut Self, mbedtls_error> {
+        if let Some(pt) = &mut self.0 {
+            let ret = unsafe { ffi::ecp_point_read_binary(&grp.0, pt, bin.as_ptr(), bin.len()) };
+
+            if ret == 0 { Ok(self) } else { Err(ret) }
+        } else {
+            panic!();
+        }
     }
 }
 
@@ -193,11 +225,11 @@ impl pk_context {
         self
     }
 
-    // pub fn set_q(&mut self, q: ecp_point) -> &mut Self {
-    //     unsafe { (*self.as_keypair()).q = q.0; }
-    //
-    //     self
-    // }
+    pub fn set_q(&mut self, mut q: ecp_point) -> &mut Self {
+        unsafe { (*self.as_keypair()).private_Q = q.0.take().unwrap(); }
+
+        self
+    }
 
     fn as_keypair(&mut self) -> *mut ffi::ecp_keypair {
         (unsafe { *self.ptr_mut() }).private_pk_ctx as *mut ffi::ecp_keypair
@@ -308,32 +340,19 @@ fn test_ifce_psa() -> Result<(), mbedtls_error> {
 
     // pk_context: verify via `ecp`
     {
-        // let grp = ecp_group::from_id(ecp_group_id::MBEDTLS_ECP_DP_SECP256R1);
-        let grp = ecp_group::from_id(ECP_DP_SECP256R1);
-
-        // let mut pt = ecp_point::new();
-        // pt.read_binary(&grp, /* jada `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126]);
-        //==== !!!!
-
-        // let md_ty = md_type::MBEDTLS_MD_SHA256;
-        // let hash = &md_info::from_type(md_ty)
-        //     .md(/* jada `to_verify` */ &[132, 106, 83, 105, 103, 110, 97, 116, 117, 114, 101, 49, 65, 160, 64, 88, 185, 161, 26, 0, 15, 70, 140, 166, 5, 105, 112, 114, 111, 120, 105, 109, 105, 116, 121, 6, 193, 26, 87, 247, 248, 30, 8, 193, 26, 89, 208, 48, 0, 14, 109, 74, 65, 68, 65, 49, 50, 51, 52, 53, 54, 55, 56, 57, 11, 105, 97, 98, 99, 100, 49, 50, 51, 52, 53, 13, 120, 124, 77, 70, 107, 119, 69, 119, 89, 72, 75, 111, 90, 73, 122, 106, 48, 67, 65, 81, 89, 73, 75, 111, 90, 73, 122, 106, 48, 68, 65, 81, 99, 68, 81, 103, 65, 69, 78, 87, 81, 79, 122, 99, 78, 77, 85, 106, 80, 48, 78, 114, 116, 102, 101, 66, 99, 48, 68, 74, 76, 87, 102, 101, 77, 71, 103, 67, 70, 100, 73, 118, 54, 70, 85, 122, 52, 68, 105, 102, 77, 49, 117, 106, 77, 66, 101, 99, 47, 103, 54, 87, 47, 80, 54, 98, 111, 84, 109, 121, 84, 71, 100, 70, 79, 104, 47, 56, 72, 119, 75, 85, 101, 114, 76, 53, 98, 112, 110, 101, 75, 56, 115, 103, 61, 61]);
-        //==== !!
+        // product jada
         let hash = &md_info::from_type(MD_SHA256)
             .md(/* `to_verify` */ &[132, 106, 83, 105, 103, 110, 97, 116, 117, 114, 101, 49, 65, 160, 64, 88, 185, 161, 26, 0, 15, 70, 140, 166, 5, 105, 112, 114, 111, 120, 105, 109, 105, 116, 121, 6, 193, 26, 87, 247, 248, 30, 8, 193, 26, 89, 208, 48, 0, 14, 109, 74, 65, 68, 65, 49, 50, 51, 52, 53, 54, 55, 56, 57, 11, 105, 97, 98, 99, 100, 49, 50, 51, 52, 53, 13, 120, 124, 77, 70, 107, 119, 69, 119, 89, 72, 75, 111, 90, 73, 122, 106, 48, 67, 65, 81, 89, 73, 75, 111, 90, 73, 122, 106, 48, 68, 65, 81, 99, 68, 81, 103, 65, 69, 78, 87, 81, 79, 122, 99, 78, 77, 85, 106, 80, 48, 78, 114, 116, 102, 101, 66, 99, 48, 68, 74, 76, 87, 102, 101, 77, 71, 103, 67, 70, 100, 73, 118, 54, 70, 85, 122, 52, 68, 105, 102, 77, 49, 117, 106, 77, 66, 101, 99, 47, 103, 54, 87, 47, 80, 54, 98, 111, 84, 109, 121, 84, 71, 100, 70, 79, 104, 47, 56, 72, 119, 75, 85, 101, 114, 76, 53, 98, 112, 110, 101, 75, 56, 115, 103, 61, 61]);
-
         let sig = &[234, 232, 104, 236, 193, 118, 136, 55, 102, 197, 220, 91, 165, 184, 220, 162, 93, 171, 60, 46, 86, 165, 81, 206, 87, 5, 183, 147, 145, 67, 72, 225, 145, 46, 83, 95, 231, 182, 170, 68, 123, 26, 104, 156, 7, 204, 120, 204, 21, 231, 109, 98, 125, 108, 112, 63, 147, 120, 2, 102, 156, 19, 172, 227];
 
-        // assert!(pk_context::new()
-        //     .setup(pk_type::MBEDTLS_PK_ECKEY)?
-        //     .set_grp(grp)
-        //     .set_q(pt)
-        //     .verify(md_ty, hash, sig)?);
-        //==== !!
+        let grp = ecp_group::from_id(ECP_DP_SECP256R1)?;
+        let mut pt = ecp_point::new();
+        pt.read_binary(&grp, /* `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126])?;
+
         assert!(pk_context::new()
             .setup(PK_ECKEY)?
             .set_grp(grp)
-            //.set_q(pt)
+            .set_q(pt)
             .verify(MD_SHA256, hash, sig)?);
     }
 
