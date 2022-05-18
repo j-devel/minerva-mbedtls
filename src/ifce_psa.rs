@@ -114,11 +114,13 @@ impl x509_crt {
 // ecp_group
 //
 
-pub struct ecp_group(ffi::ecp_group);
+pub struct ecp_group(Option<ffi::ecp_group>);
 
 impl Drop for ecp_group {
     fn drop(&mut self) {
-        unsafe { ffi::ecp_group_free(&mut self.0) }
+        if let Some(mut grp) = self.0 {
+            unsafe { ffi::ecp_group_free(&mut grp) }
+        }
     }
 }
 
@@ -134,13 +136,25 @@ impl ecp_group {
         let mut grp = ffi::ecp_group::default();
         unsafe { ffi::ecp_group_init(&mut grp) }
 
-        Self(grp)
+        Self(Some(grp))
+    }
+
+    pub fn into(mut self) -> ffi::ecp_group {
+        self.0.take().unwrap()
+    }
+
+    pub fn as_ptr(&self) -> *const ffi::ecp_group {
+        &self.0.unwrap()
     }
 
     pub fn load(&mut self, gid: ffi::ecp_group_id) -> Result<&mut Self, mbedtls_error> {
-        let ret = unsafe { ffi::ecp_group_load(&mut self.0, gid) };
+        if let Some(grp) = &mut self.0 {
+            let ret = unsafe { ffi::ecp_group_load(grp, gid) };
 
-        if ret == 0 { Ok(self) } else { Err(ret) }
+            if ret == 0 { Ok(self) } else { Err(ret) }
+        } else {
+            panic!();
+        }
     }
 }
 
@@ -166,9 +180,13 @@ impl ecp_point {
         Self(Some(pt))
     }
 
+    pub fn into(mut self) -> ffi::ecp_point {
+        self.0.take().unwrap()
+    }
+
     pub fn read_binary(&mut self, grp: &ecp_group, bin: &[u8]) -> Result<&mut Self, mbedtls_error> {
         if let Some(pt) = &mut self.0 {
-            let ret = unsafe { ffi::ecp_point_read_binary(&grp.0, pt, bin.as_ptr(), bin.len()) };
+            let ret = unsafe { ffi::ecp_point_read_binary(grp.as_ptr(), pt, bin.as_ptr(), bin.len()) };
 
             if ret == 0 { Ok(self) } else { Err(ret) }
         } else {
@@ -220,13 +238,13 @@ impl pk_context {
     }
 
     pub fn set_grp(&mut self, grp: ecp_group) -> &mut Self {
-        unsafe { (*self.as_keypair()).private_grp = grp.0; }
+        unsafe { (*self.as_keypair()).private_grp = grp.into(); }
 
         self
     }
 
-    pub fn set_q(&mut self, mut q: ecp_point) -> &mut Self {
-        unsafe { (*self.as_keypair()).private_Q = q.0.take().unwrap(); }
+    pub fn set_q(&mut self, q: ecp_point) -> &mut Self {
+        unsafe { (*self.as_keypair()).private_Q = q.into(); }
 
         self
     }
