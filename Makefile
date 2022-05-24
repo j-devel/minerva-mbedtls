@@ -24,6 +24,12 @@ test-examples:
 build:
 	cargo build --lib --release
 
+test-ifce-psa:
+	cargo test test_ifce_psa
+	cargo test test_ifce_psa --features "std"
+	cargo test test_ifce_psa --target i686-unknown-linux-gnu
+	cargo test test_ifce_psa --target i686-unknown-linux-gnu --features "std"
+
 test-v3-x86_64:
 	cargo build --lib --release
 	cargo test
