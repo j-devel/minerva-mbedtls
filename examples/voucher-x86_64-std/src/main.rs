@@ -1,4 +1,4 @@
-use minerva_mbedtls::{psa_crypto, ifce::psa_crypto_ffi};
+use minerva_mbedtls::{psa_crypto, ifce_psa};
 
 fn main() -> Result<(), VoucherError> {
     psa_crypto::init().unwrap();
@@ -46,17 +46,15 @@ impl Validate for Voucher {
         let (_, sig_alg, to_verify) = self.0.to_validate();
         let (signature, _) = sig_alg.unwrap();
 
-        use psa_crypto_ffi::{md_info, MD_SHA256/* TODO: , x509_crt */};
-        use minerva_mbedtls::ifce::{md_type, x509_crt}; // TODO: migrate to `ifce::psa_crypto_ffi::*`
-
+        use ifce_psa::{md_info, MD_SHA256, x509_crt};
         let hash = &md_info::from_type(MD_SHA256).md(to_verify);
         let err = Err(VoucherError::ValidationFailed);
 
         x509_crt::new()
             .parse(masa_pem.unwrap()).unwrap()
             .info().unwrap() // debug
-            .pk_mut()
-            .verify(md_type::MBEDTLS_MD_SHA256, hash, signature)
+            .pk_ctx()
+            .verify(MD_SHA256, hash, signature)
             .map_or(err, |x| if x { Ok(self) } else { err })
     }
 }
