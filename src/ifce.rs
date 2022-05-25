@@ -2,7 +2,7 @@
  * v0.4.x
  *
  * We will DEPRECATE '{ifce,sys,glue}.rs' when
- * 'ifce_psa.rs' (our new `psa_crypto::ffi` based safe abstractions) is complete.
+ * the 'psa_ifce.rs' module (our new `psa_crypto::ffi` based safe abstractions) is complete.
  */
 
 use super::sys::*;

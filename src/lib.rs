@@ -22,4 +22,4 @@ pub mod ifce;
 pub mod utils;
 
 #[cfg(feature = "v3")]
-pub mod ifce_psa;
+pub mod psa_ifce;

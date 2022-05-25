@@ -336,7 +336,7 @@ impl pk_context {
 }
 
 #[test]
-fn test_ifce_psa() -> Result<(), mbedtls_error> {
+fn test_psa_ifce() -> Result<(), mbedtls_error> {
     use super::*;
 
     psa_crypto::init().unwrap();

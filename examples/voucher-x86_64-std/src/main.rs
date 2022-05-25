@@ -1,4 +1,4 @@
-use minerva_mbedtls::{psa_crypto, ifce_psa};
+use minerva_mbedtls::{psa_crypto, psa_ifce};
 
 fn main() -> Result<(), VoucherError> {
     psa_crypto::init().unwrap();
@@ -46,7 +46,7 @@ impl Validate for Voucher {
         let (_, sig_alg, to_verify) = self.0.to_validate();
         let (signature, _) = sig_alg.unwrap();
 
-        use ifce_psa::{md_info, MD_SHA256, x509_crt};
+        use psa_ifce::{md_info, MD_SHA256, x509_crt};
         let hash = &md_info::from_type(MD_SHA256).md(to_verify);
         let err = Err(VoucherError::ValidationFailed);
 
