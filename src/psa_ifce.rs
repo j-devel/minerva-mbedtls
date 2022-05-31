@@ -14,7 +14,7 @@ use psa_crypto::ffi;
 // md
 //
 
-pub use ffi::{MD_SHA256, MD_SHA384, MD_SHA512, PK_ECKEY, ECP_DP_SECP256R1};
+pub use ffi::{md_type_t, MD_SHA256, MD_SHA384, MD_SHA512, PK_ECKEY, ECP_DP_SECP256R1};
 pub struct md_info(*const ffi::md_info_t);
 
 impl md_info {
@@ -209,7 +209,7 @@ impl Drop for pk_context {
     }
 }
 
-type FnRng = unsafe extern "C" fn(*mut ffi::raw_types::c_void, *mut u8, usize) -> i32;
+pub type FnRng = unsafe extern "C" fn(*mut ffi::raw_types::c_void, *mut u8, usize) -> i32;
 
 extern "C" {
     fn rand() -> c_int;
@@ -315,6 +315,10 @@ impl pk_context {
         } else { Err(ret) }
     }
 
+    pub fn test_f_rng_ptr() -> FnRng {
+        Self::rnd_std_rand
+    }
+
     #[allow(unused_variables, unreachable_code)]
     extern "C" fn rnd_std_rand(rng_state: *mut ffi::raw_types::c_void, output: *mut u8, len: usize) -> i32 {
         let rng_state: *mut ffi::raw_types::c_void = core::ptr::null_mut();
@@ -414,7 +418,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
 ";
 
         let mut pk = pk_context::new();
-        let f_rng = Some(pk_context::rnd_std_rand as FnRng);
+        let f_rng = Some(pk_context::test_f_rng_ptr());
 
         pk.parse_key(pem, None, f_rng, core::ptr::null_mut())?;
 
