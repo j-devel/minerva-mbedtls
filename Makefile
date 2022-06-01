@@ -54,7 +54,7 @@ test-lts-x86:#DEPRECATED
 test:
 	make build
 	make test-examples
-	test-psa-ifce
+	make test-psa-ifce
 	rm -rf target && make test-v3-x86_64
 	rm -rf target && make test-lts-x86_64
 	rm -rf target && make test-v3-x86
