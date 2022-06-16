@@ -143,10 +143,6 @@ impl ecp_group {
         self.0.take().unwrap()
     }
 
-    pub fn as_ptr(&self) -> *const ffi::ecp_group {
-        &self.0.unwrap()
-    }
-
     pub fn load(&mut self, gid: ffi::ecp_group_id) -> Result<&mut Self, mbedtls_error> {
         if let Some(grp) = &mut self.0 {
             let ret = unsafe { ffi::ecp_group_load(grp, gid) };
@@ -184,9 +180,9 @@ impl ecp_point {
         self.0.take().unwrap()
     }
 
-    pub fn read_binary(&mut self, grp: &ecp_group, bin: &[u8]) -> Result<&mut Self, mbedtls_error> {
+    pub fn read_binary(&mut self, grp: ecp_group, bin: &[u8]) -> Result<&mut Self, mbedtls_error> {
         if let Some(pt) = &mut self.0 {
-            let ret = unsafe { ffi::ecp_point_read_binary(grp.as_ptr(), pt, bin.as_ptr(), bin.len()) };
+            let ret = unsafe { ffi::ecp_point_read_binary(&grp.into() as *const ffi::ecp_group, pt, bin.as_ptr(), bin.len()) };
 
             if ret == 0 { Ok(self) } else { Err(ret) }
         } else {
@@ -369,11 +365,11 @@ fn test_psa_ifce() -> Result<(), mbedtls_error> {
 
         let grp = ecp_group::from_id(ECP_DP_SECP256R1)?;
         let mut pt = ecp_point::new();
-        pt.read_binary(&grp, /* `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126])?;
+        pt.read_binary(grp, /* `signer_cert` */ &[4, 186, 197, 177, 28, 173, 143, 153, 249, 199, 43, 5, 207, 75, 158, 38, 210, 68, 220, 24, 159, 116, 82, 40, 37, 90, 33, 154, 134, 214, 160, 158, 255, 32, 19, 139, 248, 45, 193, 182, 213, 98, 190, 15, 165, 74, 183, 128, 74, 58, 100, 182, 215, 44, 207, 237, 107, 111, 182, 237, 40, 187, 252, 17, 126])?;
 
         assert!(pk_context::new()
             .setup(PK_ECKEY)?
-            .set_grp(grp)
+            .set_grp(ecp_group::from_id(ECP_DP_SECP256R1)?)
             .set_q(pt)
             .verify(MD_SHA256, hash, sig)?);
     }
