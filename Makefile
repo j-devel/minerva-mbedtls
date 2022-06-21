@@ -21,29 +21,17 @@ test-examples:
 	for name in $(NAMES); do \
         make -C ./examples/$$name test || exit 1; done
 
-build:
-	cargo build --lib --release
-
-test-psa-ifce:
-	cargo test test_psa_ifce
-	cargo test test_psa_ifce --features "std"
-	cargo test test_psa_ifce --target i686-unknown-linux-gnu
-	cargo test test_psa_ifce --target i686-unknown-linux-gnu --features "std"
-	make test-examples
-
-test-v3-x86_64:#DEPRECATED
+test-x86_64:
 	cargo build --lib --release
 	cargo test
 	cargo test --features "std"
 
-test-v3-x86:#DEPRECATED
+test-x86:
 	cargo build --lib --release --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu --features "std"
 
 test:
-	make build
+	rm -rf target && make test-x86_64
+	rm -rf target && make test-x86
 	make test-examples
-	make test-psa-ifce
-	rm -rf target && make test-v3-x86_64
-	rm -rf target && make test-v3-x86
