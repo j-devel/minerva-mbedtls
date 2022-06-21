@@ -20,10 +20,6 @@ fn main() -> std::io::Result<()> {
         _ => "x86_64",
     });
 
-    let xtensa_gcc = if target.starts_with("xtensa-") {
-        Some(env::var("XTENSA_GCC").expect("XTENSA_GCC"))
-    } else { None };
-
     if !Path::new(&mbedtls).exists() {
         Command::new("git")
             .args(&["clone", "-b", branch, "https://github.com/ARMmbed/mbedtls", &mbedtls]).status()?;
@@ -39,23 +35,6 @@ fn main() -> std::io::Result<()> {
     println!("cargo:rustc-link-lib=static=mbedtls");
     println!("cargo:rustc-link-lib=static=mbedx509");
     println!("cargo:rustc-link-lib=static=mbedcrypto");
-
-    //
-
-    println!("cargo:rerun-if-changed=src/glue.c");
-    let mut cfg = cc::Build::new();
-    if is_v3 {
-        cfg.define("MINERVA_MBEDTLS_GLUE_V3", None)
-            .include(format!("{}/tests/include", mbedtls))
-            .file(format!("{}/tests/src/random.c", mbedtls));
-    }
-    if let Some(cc) = xtensa_gcc {
-        cfg.define("__XTENSA__", None)
-            .compiler(cc);
-    }
-    cfg.include(format!("{}/include", mbedtls))
-        .file("src/glue.c")
-        .compile("libglue-mbedtls.a");
 
     Ok(())
 }

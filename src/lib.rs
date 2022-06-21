@@ -16,10 +16,7 @@ use mcu_if::{cstr_from, null_terminate_str, null_terminate_bytes};
 #[cfg(feature = "v3")]
 pub use psa_crypto;
 
-mod glue;
-pub mod sys;
-pub mod ifce;
-pub mod utils;
-
 #[cfg(feature = "v3")]
 pub mod psa_ifce;
+
+pub mod utils;
