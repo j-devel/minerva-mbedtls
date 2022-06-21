@@ -36,26 +36,14 @@ test-v3-x86_64:#DEPRECATED
 	cargo test
 	cargo test --features "std"
 
-test-lts-x86_64:#DEPRECATED
-	cargo build --lib --release --no-default-features
-	cargo test --no-default-features
-	cargo test --no-default-features --features "std"
-
 test-v3-x86:#DEPRECATED
 	cargo build --lib --release --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu
 	cargo test --target i686-unknown-linux-gnu --features "std"
-
-test-lts-x86:#DEPRECATED
-	cargo build --lib --release --target i686-unknown-linux-gnu --no-default-features
-	cargo test --target i686-unknown-linux-gnu --no-default-features
-	cargo test --target i686-unknown-linux-gnu --no-default-features --features "std"
 
 test:
 	make build
 	make test-examples
 	make test-psa-ifce
 	rm -rf target && make test-v3-x86_64
-	rm -rf target && make test-lts-x86_64
 	rm -rf target && make test-v3-x86
-	rm -rf target && make test-lts-x86
