@@ -13,7 +13,6 @@ init-rust-toolchains:
 	rustup target add x86_64-unknown-linux-gnu
 	rustup target add i686-unknown-linux-gnu --toolchain nightly
 	rustup default nightly
-	# TODO xtensa
 	rustup show
 
 NAMES := voucher-x86_64-std voucher-x86-no_std
