@@ -1,0 +1,11 @@
+[package]
+name = "minerva-mbedtls-test"
+version = "0.1.0"
+edition = "2018"
+authors = ["ANIMA Minerva toolkit"]
+
+[lib]
+path = "test.rs"
+
+[dependencies]
+minerva-mbedtls = { path = '..' }

@@ -22,15 +22,15 @@ test-examples:
 
 test-x86_64:
 	cargo build --lib --release
-	cargo test
-	cargo test --features "std"
+	cargo test --manifest-path ./test/Cargo.toml  ##cargo test
+	##cargo test --features "std"
 
 test-x86:
 	cargo build --lib --release --target i686-unknown-linux-gnu
-	cargo test --target i686-unknown-linux-gnu
-	cargo test --target i686-unknown-linux-gnu --features "std"
+	##cargo test --target i686-unknown-linux-gnu
+	##cargo test --target i686-unknown-linux-gnu --features "std"
 
 test:
-	rm -rf target && make test-x86_64
-	rm -rf target && make test-x86
+	make test-x86_64
+	make test-x86
 	make test-examples
