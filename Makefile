@@ -22,7 +22,7 @@ test-examples:
 
 test-x86_64:
 	cargo build --lib --release
-	cargo test --manifest-path ./test/Cargo.toml  ##cargo test
+	cargo test --manifest-path ./test/Cargo.toml  ##WIP##cargo test
 	##cargo test --features "std"
 
 test-x86:
