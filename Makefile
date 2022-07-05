@@ -1,5 +1,7 @@
 all: build
 
+.PHONY: test
+
 SHELL := /bin/bash
 
 # 'test' or 'ci'
