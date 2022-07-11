@@ -7,5 +7,9 @@ authors = ["ANIMA Minerva toolkit"]
 [lib]
 path = "test.rs"
 
+[features]
+default = ["minerva-mbedtls"]
+std = ["minerva-mbedtls/std"]
+
 [dependencies]
-minerva-mbedtls = { path = '..' }
+minerva-mbedtls = { path = '..', default-features = false, optional = true }
