@@ -1,3 +1,5 @@
+pub use minerva_mbedtls;
+
 #[cfg(test)]
 use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
 
