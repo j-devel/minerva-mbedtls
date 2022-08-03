@@ -14,6 +14,10 @@ fn init_psa_crypto() {
     psa_crypto::initialized().unwrap();
 }
 
+pub fn test_foo() {
+    init_psa_crypto();
+}
+
 #[test]
 pub fn test_md() -> Result<(), mbedtls_error> {
     init_psa_crypto();
