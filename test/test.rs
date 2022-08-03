@@ -1,18 +1,17 @@
 #![no_std]
 
-//#[cfg(test)]
 use mcu_if::alloc::vec;
 
 pub use minerva_mbedtls;
 
-//#[cfg(test)]
 use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
 
-//#[cfg(test)]
 fn init_psa_crypto() {
     psa_crypto::init().unwrap();
     psa_crypto::initialized().unwrap();
 }
+
+//
 
 pub fn test_md() -> Result<(), mbedtls_error> {
     init_psa_crypto();
@@ -31,11 +30,7 @@ pub fn test_md() -> Result<(), mbedtls_error> {
     Ok(())
 }
 
-#[test]
-pub fn md() -> Result<(), mbedtls_error> { test_md() }
-
-#[test]
-fn test_pk_context_verify_via_ecp() -> Result<(), mbedtls_error> {
+pub fn test_pk_context_verify_via_ecp() -> Result<(), mbedtls_error> {
     init_psa_crypto();
 
     // product jada
@@ -56,8 +51,7 @@ fn test_pk_context_verify_via_ecp() -> Result<(), mbedtls_error> {
     Ok(())
 }
 
-#[test]
-fn test_pk_context_verify_via_x509_crt() -> Result<(), mbedtls_error> {
+pub fn test_pk_context_verify_via_x509_crt() -> Result<(), mbedtls_error> {
     init_psa_crypto();
 
     // product f2_00_02
@@ -88,8 +82,7 @@ G5/TRupdVlCjPz1+tm/iA9ykx/sazZsuPgw14YulLw==
     Ok(())
 }
 
-#[test]
-fn test_pk_context_sign() -> Result<(), mbedtls_error> {
+pub fn test_pk_context_sign() -> Result<(), mbedtls_error> {
     init_psa_crypto();
 
     // product 02_00_2e
@@ -115,8 +108,7 @@ ZzlO62kDYBo3IPrcjkiPVnhoCosUBpTzbg==
     Ok(())
 }
 
-#[test]
-fn test_utils_is_asn1_signature() {
+pub fn test_utils_is_asn1_signature() {
     use minerva_mbedtls::utils::*;
 
     assert_eq!(is_asn1_signature(&[ // len=64; product=F2_00_02
@@ -131,3 +123,20 @@ fn test_utils_is_asn1_signature() {
         48, 69, 2, 33, 0, 152, 82, 125, 36, 97, 213, 158, 38, 8, 68, 14, 194, 99, 237, 119, 120, 106, 11, 51, 153, 151, 187, 19, 189, 52, 137, 8, 86, 218, 247, 111, 220, 2, 32, 39, 131, 155, 58, 236, 211, 16, 142, 139, 129, 22, 124, 70, 214, 168, 71, 12, 83, 62, 248, 57, 2, 152, 23, 4, 163, 170, 80, 127, 137, 35, 52
     ]), true);
 }
+
+//
+
+#[test]
+fn md() -> Result<(), mbedtls_error> { test_md() }
+
+#[test]
+fn pk_context_verify_via_ecp() -> Result<(), mbedtls_error> { test_pk_context_verify_via_ecp() }
+
+#[test]
+fn pk_context_verify_via_x509_crt() -> Result<(), mbedtls_error> { test_pk_context_verify_via_x509_crt() }
+
+#[test]
+fn pk_context_sign() -> Result<(), mbedtls_error> { test_pk_context_sign() }
+
+#[test]
+fn utils_is_asn1_signature() { test_utils_is_asn1_signature() }
