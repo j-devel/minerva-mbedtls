@@ -15,7 +15,7 @@ fn init_psa_crypto() {
 }
 
 #[test]
-fn test_md() -> Result<(), mbedtls_error> {
+pub fn test_md() -> Result<(), mbedtls_error> {
     init_psa_crypto();
 
     // product jada
