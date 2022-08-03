@@ -1,5 +1,8 @@
 #![no_std]
 
+#[cfg(test)]
+use mcu_if::alloc::vec;
+
 pub use minerva_mbedtls;
 
 #[cfg(test)]
