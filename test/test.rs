@@ -1,15 +1,15 @@
 #![no_std]
 
-#[cfg(test)]
+//#[cfg(test)]
 use mcu_if::alloc::vec;
 
 pub use minerva_mbedtls;
 
-#[cfg(test)]
-use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
+//#[cfg(test)]
+pub use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
 
-#[cfg(test)]
-fn init_psa_crypto() {
+//#[cfg(test)]
+pub fn init_psa_crypto() {
     psa_crypto::init().unwrap();
     psa_crypto::initialized().unwrap();
 }
