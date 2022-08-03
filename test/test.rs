@@ -6,19 +6,14 @@ use mcu_if::alloc::vec;
 pub use minerva_mbedtls;
 
 //#[cfg(test)]
-pub use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
+use minerva_mbedtls::{psa_crypto, psa_ifce::*, mbedtls_error};
 
 //#[cfg(test)]
-pub fn init_psa_crypto() {
+fn init_psa_crypto() {
     psa_crypto::init().unwrap();
     psa_crypto::initialized().unwrap();
 }
 
-pub fn test_foo() {
-    init_psa_crypto();
-}
-
-#[test]
 pub fn test_md() -> Result<(), mbedtls_error> {
     init_psa_crypto();
 
@@ -35,6 +30,9 @@ pub fn test_md() -> Result<(), mbedtls_error> {
 
     Ok(())
 }
+
+#[test]
+pub fn md() -> Result<(), mbedtls_error> { test_md() }
 
 #[test]
 fn test_pk_context_verify_via_ecp() -> Result<(), mbedtls_error> {
